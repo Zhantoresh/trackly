@@ -4,19 +4,18 @@ from app.database import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserLogin, UserResponse, Token
 from app.config import settings
-from passlib.context import CryptContext
 from jose import jwt
 from datetime import datetime, timedelta
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import bcrypt as bcrypt_lib
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    return bcrypt_lib.hashpw(password.encode(), bcrypt_lib.gensalt()).decode()
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    return bcrypt_lib.checkpw(plain.encode(), hashed.encode())
 
 def create_token(user_id: str) -> str:
     expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
