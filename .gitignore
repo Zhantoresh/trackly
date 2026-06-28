@@ -224,6 +224,6 @@ frontend/.env
 frontend/dist/
 
 # Backend
-backend/__pycache__/
 backend/.env
 backend/venv/
+backend/__pycache__/
