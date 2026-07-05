@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers import auth, tasks
 from app.database import engine, Base
 from app.models import User, Project, ProjectMember, Task, TaskFile  # noqa: F401
-
+from app.routers import auth, tasks, projects 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Trackly API")
@@ -18,7 +18,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(tasks.router)
-
+app.include_router(projects.router)
 
 @app.get("/")
 def root():
