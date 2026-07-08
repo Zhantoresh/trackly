@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import auth
+from app.routers import auth, tasks
 from app.database import engine, Base
-from app.models import User, Project, ProjectMember, Task, TaskFile  # noqa: F401
+from app.models import user, project, task
 
 Base.metadata.create_all(bind=engine)
 
@@ -17,6 +17,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(tasks.router)
 
 
 @app.get("/")
