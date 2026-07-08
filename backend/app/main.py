@@ -19,6 +19,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(tasks.router)
 
+
 @app.get("/")
 def root():
     return {"message": "Trackly API is running"}

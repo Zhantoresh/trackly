@@ -5,6 +5,7 @@ from app.database import Base
 import uuid
 from datetime import datetime
 
+
 class User(Base):
     __tablename__ = "users"
 
