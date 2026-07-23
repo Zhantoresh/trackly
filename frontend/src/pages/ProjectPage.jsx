@@ -207,6 +207,12 @@ const [projectData, setProjectData] = useState({
                 <option value="in_progress">In Progress</option>
                 <option value="done">Done</option>
               </select>
+               <select className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500">
+                 <option value="">Select priority</option>
+                 <option value="low">Low</option>
+                 <option value="medium">Medium</option>
+                 <option value="high">High</option>
+                </select>
               <input type="text" placeholder="Assignee name" className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500" />
               <input type="date" className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500" />
             </div>
