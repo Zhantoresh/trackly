@@ -22,18 +22,24 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-md">
-        <h1 className="text-2xl font-semibold text-gray-800 mb-6">Создать аккаунт</h1>
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
+      <div className="bg-white p-8 rounded-xl border border-gray-200 w-full max-w-sm">
+      <div className="flex items-center gap-2 mb-6">
+  <img src="/src/assets/logo.png" alt="Trackly" className="w-7 h-7" />
+  <span className="font-semibold text-green-700 text-base">Trackly</span>
+</div>
+        <h1 className="text-2xl font-semibold text-gray-800 mb-1">Create an account</h1>
+        <p className="text-sm text-gray-500 mb-6">Start managing your projects in one workspace.</p>
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Имя</label>
+            <label className="block text-sm text-gray-600 mb-1">Full name</label>
             <input
               type="text"
+              placeholder="Enter your full name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600"
               required
             />
           </div>
@@ -41,33 +47,37 @@ export default function RegisterPage() {
             <label className="block text-sm text-gray-600 mb-1">Email</label>
             <input
               type="email"
+              placeholder="name@company.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600"
               required
             />
           </div>
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Пароль</label>
+            <label className="block text-sm text-gray-600 mb-1">Password</label>
             <input
               type="password"
+              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600"
               required
             />
           </div>
           <button
             type="submit"
-            className="w-full bg-green-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition"
+            className="w-full bg-green-700 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-800 transition"
           >
-            Зарегистрироваться
+            Create Account
           </button>
         </form>
         <p className="text-sm text-gray-500 mt-4 text-center">
-          Уже есть аккаунт? <Link to="/login" className="text-green-600 hover:underline">Войти</Link>
+          Already have an account?{' '}
+          <Link to="/login" className="text-green-700 hover:underline">Log in</Link>
         </p>
       </div>
+      <p className="text-xs text-gray-400 mt-6">© 2026 Trackly.</p>
     </div>
   )
 }
