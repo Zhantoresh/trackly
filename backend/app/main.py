@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers import auth, tasks, projects, files, roles, stats
 from app.database import engine, Base
 from app.models import user, project, task
-
+from app.routers import auth, tasks, files
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Trackly API")
