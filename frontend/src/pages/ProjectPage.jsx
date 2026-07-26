@@ -29,15 +29,29 @@ export default function ProjectPage() {
 
   const [project, setProject] = useState(null)
   const [tasks, setTasks] = useState({ todo: [], in_progress: [], done: [] })
+  const [files, setFiles] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showModal, setShowModal] = useState(false)
+  const [showFileModal, setShowFileModal] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newPriority, setNewPriority] = useState('medium')
+  const [selectedTaskId, setSelectedTaskId] = useState('')
+  const [selectedFile, setSelectedFile] = useState(null)
 
   useEffect(() => {
     loadData()
   }, [projectId])
+
+  const loadFiles = async () => {
+    try {
+      const res = await api.get(`/api/projects/files/project/${projectId}`)
+      console.log('Files:', res.data)
+      setFiles(res.data)
+    }   catch (err) {
+      console.error('Could not load files')
+  }
+}
 
   const loadData = async () => {
     setLoading(true)
@@ -53,6 +67,7 @@ export default function ProjectPage() {
         grouped[task.status]?.push(task)
       }
       setTasks(grouped)
+      await loadFiles()
     } catch (err) {
       setError('Could not load this project.')
     } finally {
@@ -82,7 +97,7 @@ export default function ProjectPage() {
       try {
         await api.put(`/api/projects/${projectId}/tasks/${moved.id}`, { status: destination.droppableId })
       } catch (err) {
-        loadData() // revert to server state if the update failed
+        loadData()
       }
     }
   }
@@ -97,6 +112,23 @@ export default function ProjectPage() {
       setNewPriority('medium')
     } catch (err) {
       alert('Could not create task.')
+    }
+  }
+
+  const handleFileUpload = async () => {
+    if (!selectedTaskId || !selectedFile) return
+    const formData = new FormData()
+    formData.append('file', selectedFile)
+    try {
+      await api.post(`/api/projects/${projectId}/tasks/${selectedTaskId}/files`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      setShowFileModal(false)
+      setSelectedTaskId('')
+      setSelectedFile(null)
+      loadFiles()
+    } catch (err) {
+      alert('Could not upload file.')
     }
   }
 
@@ -203,8 +235,40 @@ export default function ProjectPage() {
             ))}
           </div>
         </DragDropContext>
+
+        {/* Files section */}
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-gray-800">Files</h2>
+            <button
+              onClick={() => setShowFileModal(true)}
+              className="text-white px-4 py-2 rounded-lg text-sm font-medium"
+              style={{ backgroundColor: '#0D631B' }}
+            >
+              + Upload File
+            </button>
+          </div>
+          {files.length === 0 ? (
+            <p className="text-sm text-gray-400">No files uploaded yet.</p>
+          ) : (
+            <div className="grid grid-cols-3 gap-3">
+              {files.map((file) => (
+                <div key={file.id} className="bg-white border border-gray-200 rounded-lg p-4 flex items-center gap-3">
+                  <File size={20} className="text-gray-400" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-800 truncate">{file.file_name}</p>
+                  </div>
+                  <a href={file.file_url} target="_blank" rel="noreferrer" className="text-xs hover:underline" style={{ color: '#0D631B' }}>
+                    Download
+                  </a>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </main>
 
+      {/* Add Task Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
@@ -239,6 +303,53 @@ export default function ProjectPage() {
               </button>
               <button onClick={handleCreateTask} className="flex-1 text-white rounded-lg py-2 text-sm font-medium" style={{ backgroundColor: '#0D631B' }}>
                 Create Task
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upload File Modal */}
+      {showFileModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">Upload File</h2>
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="text-sm text-gray-600 mb-1 block">Select Task</label>
+                <select
+                  value={selectedTaskId}
+                  onChange={(e) => setSelectedTaskId(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                >
+                  <option value="">Choose a task...</option>
+                  {[...tasks.todo, ...tasks.in_progress, ...tasks.done].map((task) => (
+                    <option key={task.id} value={task.id}>{task.title}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm text-gray-600 mb-1 block">File</label>
+                <input
+                  type="file"
+                  onChange={(e) => setSelectedFile(e.target.files[0])}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-5">
+              <button
+                onClick={() => setShowFileModal(false)}
+                className="flex-1 border border-gray-200 rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleFileUpload}
+                className="flex-1 text-white rounded-lg py-2 text-sm font-medium"
+                style={{ backgroundColor: '#0D631B' }}
+              >
+                Upload
               </button>
             </div>
           </div>
