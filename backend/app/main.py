@@ -12,7 +12,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "https://trackly.vercel.app",  # TODO: replace with real prod frontend URL once deployed
+        "https://trackly.vercel.app",
+        "https://trackly-mo3g.vercel.app",
+          
     ],
     allow_credentials=True,
     allow_methods=["*"],
