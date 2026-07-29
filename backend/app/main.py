@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import auth, tasks, projects, files, roles, stats
-from app.database import engine, Base
-from app.models import user, project, task
 
-Base.metadata.create_all(bind=engine)
+# Schema is managed by Alembic migrations (see Dockerfile CMD: `alembic upgrade head`),
+# so we don't call Base.metadata.create_all() here anymore — it was redundant and
+# could mask a broken/missing migration by silently creating tables from the models.
 
 app = FastAPI(title="Trackly API")
 
@@ -12,7 +12,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "https://trackly-mo3g.vercel.app",  # TODO: replace with real prod frontend URL once deployed
+        "https://trackly.vercel.app",
+        "https://trackly-mo3g.vercel.app",
+          
     ],
     allow_credentials=True,
     allow_methods=["*"],
