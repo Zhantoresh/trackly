@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.task import Task, TaskFile
@@ -10,106 +9,75 @@ from pydantic import BaseModel
 from uuid import UUID
 from datetime import datetime
 from typing import Optional
-import httpx
+from pathlib import Path
 import uuid
+import traceback
 
 router = APIRouter(prefix="/api/projects", tags=["files"])
 
-
-# --- Supabase Storage helpers ---
-
-SUPABASE_STORAGE_URL = f"{settings.SUPABASE_URL}/storage/v1/object"
-SUPABASE_HEADERS = {
-    "Authorization": f"Bearer {settings.SUPABASE_SERVICE_KEY}",
-    "apikey": settings.SUPABASE_SERVICE_KEY,
-}
-BUCKET = "task-files"
-
-
-def upload_to_supabase(file_bytes: bytes, file_name: str, content_type: str) -> str:
-    """Загружает файл в Supabase Storage, возвращает публичный URL."""
-    path = f"{uuid.uuid4()}_{file_name}"
-    url = f"{SUPABASE_STORAGE_URL}/{BUCKET}/{path}"
-
-    with httpx.Client() as client:
-        response = client.post(
-            url,
-            content=file_bytes,
-            headers={**SUPABASE_HEADERS, "Content-Type": content_type},
-        )
-    if response.status_code not in (200, 201):
-        raise HTTPException(status_code=500, detail=f"Upload failed: {response.text}")
-
-    public_url = f"{settings.SUPABASE_URL}/storage/v1/object/public/{BUCKET}/{path}"
-    return public_url, path
-
-
-def delete_from_supabase(path: str):
-    """Удаляет файл из Supabase Storage по пути."""
-    url = f"{SUPABASE_STORAGE_URL}/{BUCKET}/{path}"
-    with httpx.Client() as client:
-        response = client.delete(url, headers=SUPABASE_HEADERS)
-    if response.status_code not in (200, 204):
-        raise HTTPException(status_code=500, detail=f"Delete failed: {response.text}")
-
-
-# --- Schemas ---
-
 class FileResponse(BaseModel):
     id: UUID
-    task_id: UUID
     file_name: str
     file_url: str
+    task_id: UUID
     uploaded_by: Optional[UUID]
     created_at: datetime
 
     class Config:
         from_attributes = True
 
-
-# --- Endpoints ---
-
-@router.post("/{project_id}/tasks/{task_id}/files", response_model=FileResponse)
+@router.post("/{project_id}/tasks/{task_id}/files")
 async def upload_file(
     project_id: UUID,
     task_id: UUID,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user)
 ):
-    # Проверяем что задача существует и принадлежит проекту
-    task = db.query(Task).filter(Task.id == task_id, Task.project_id == project_id).first()
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+    try:
+        task = db.query(Task).filter(Task.id == task_id, Task.project_id == project_id).first()
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
 
-    file_bytes = await file.read()
-    content_type = file.content_type or "application/octet-stream"
+        file_content = await file.read()
+        file_ext = file.filename.split(".")[-1] if "." in file.filename else ""
+        stored_name = f"{uuid.uuid4()}.{file_ext}" if file_ext else str(uuid.uuid4())
+        storage_path = f"{project_id}/{task_id}/{stored_name}"
 
-    public_url, storage_path = upload_to_supabase(file_bytes, file.filename, content_type)
+        dest_path = Path(settings.UPLOAD_DIR) / storage_path
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+        dest_path.write_bytes(file_content)
 
-    task_file = TaskFile(
-        task_id=task_id,
-        file_name=file.filename,
-        file_url=public_url,
-        uploaded_by=current_user.id,
-    )
-    db.add(task_file)
-    db.commit()
-    db.refresh(task_file)
-    return task_file
+        public_url = f"{settings.PUBLIC_BASE_URL}/files/{storage_path}"
+
+        task_file = TaskFile(
+            task_id=task_id,
+            file_name=file.filename,
+            file_url=public_url,
+            uploaded_by=current_user.id,
+        )
+        db.add(task_file)
+        db.commit()
+        db.refresh(task_file)
+        return task_file
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/{project_id}/tasks/{task_id}/files", response_model=list[FileResponse])
+@router.get("/{project_id}/tasks/{task_id}/files")
 def get_files(
     project_id: UUID,
     task_id: UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user)
 ):
     task = db.query(Task).filter(Task.id == task_id, Task.project_id == project_id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-
     files = db.query(TaskFile).filter(TaskFile.task_id == task_id).all()
     return files
 
@@ -120,27 +88,33 @@ def delete_file(
     task_id: UUID,
     file_id: UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user)
 ):
-    task = db.query(Task).filter(Task.id == task_id, Task.project_id == project_id).first()
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
-
-    task_file = db.query(TaskFile).filter(
-        TaskFile.id == file_id,
-        TaskFile.task_id == task_id
-    ).first()
+    task_file = db.query(TaskFile).filter(TaskFile.id == file_id, TaskFile.task_id == task_id).first()
     if not task_file:
         raise HTTPException(status_code=404, detail="File not found")
 
-    # Достаём path из URL чтобы удалить из Storage
-    # URL формат: .../object/public/task-files/{path}
+    # best-effort: remove the file from disk too, DB row is the source of truth either way
     try:
-        path = task_file.file_url.split(f"/public/{BUCKET}/")[1]
-        delete_from_supabase(path)
+        marker = f"/files/{project_id}/{task_id}/"
+        if marker in task_file.file_url:
+            rel_path = task_file.file_url.split("/files/", 1)[1]
+            (Path(settings.UPLOAD_DIR) / rel_path).unlink(missing_ok=True)
     except Exception:
-        pass  # если файл уже удалён из storage — просто удаляем запись из БД
+        traceback.print_exc()
 
     db.delete(task_file)
     db.commit()
     return {"message": "File deleted"}
+
+
+@router.get("/files/project/{project_id}")
+def get_project_files(
+    project_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    tasks = db.query(Task).filter(Task.project_id == project_id).all()
+    task_ids = [t.id for t in tasks]
+    files = db.query(TaskFile).filter(TaskFile.task_id.in_(task_ids)).all()
+    return files
