@@ -1,9 +1,16 @@
-from sqlalchemy import Column, String, DateTime
+from sqlalchemy import Column, String, DateTime, Enum as SAEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.database import Base
 import uuid
 from datetime import datetime
+import enum
+
+
+class UserRole(str, enum.Enum):
+    admin = "admin"
+    mentor = "mentor"
+    student = "student"
 
 
 class User(Base):
@@ -13,6 +20,7 @@ class User(Base):
     name = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False, index=True)
     hashed_password = Column(String, nullable=False)
+    role = Column(SAEnum(UserRole), nullable=False, default=UserRole.student, server_default=UserRole.student.value)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     owned_projects = relationship("Project", back_populates="owner")
