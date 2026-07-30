@@ -15,10 +15,11 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "https://trackly.vercel.app",
-        "https://trackly-mo3g.vercel.app",
-          
     ],
+    # Vercel даёт новый поддомен *.vercel.app при переименовании проекта и на каждый
+    # preview-деплой (trackly-mauve.vercel.app, trackly-git-<branch>-<team>.vercel.app и т.д.).
+    # Регэксп покрывает всё это разом, без правки кода на каждый передеплой.
+    allow_origin_regex=r"https://trackly(-[a-z0-9]+)*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
