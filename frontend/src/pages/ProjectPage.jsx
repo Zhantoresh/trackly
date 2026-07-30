@@ -1,34 +1,32 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import { useNavigate, useParams } from 'react-router-dom'
-import { LayoutDashboard, FolderOpen, CheckSquare, File, Users, Settings, HelpCircle, LogOut, Calendar, Trash2 } from 'lucide-react'
+import { File, Calendar, Trash2, Search } from 'lucide-react'
 import api from '../services/api'
-
-const navItems = [
-  { name: 'Dashboard', icon: <LayoutDashboard size={16} /> },
-  { name: 'Projects', icon: <FolderOpen size={16} /> },
-  { name: 'Tasks', icon: <CheckSquare size={16} /> },
-  { name: 'Files', icon: <File size={16} /> },
-  { name: 'Team', icon: <Users size={16} /> },
-  { name: 'Settings', icon: <Settings size={16} /> },
-]
-
-const routeFor = (name) => ({
-  Dashboard: '/dashboard', Projects: '/projects', Tasks: '/tasks',
-  Files: '/files', Team: '/team', Settings: '/settings',
-}[name])
+import Sidebar from '../components/Sidebar'
 
 const columns = { todo: 'To Do', in_progress: 'In Progress', done: 'Done' }
 
 const priorityBg = { high: '#FAECE7', medium: '#FAEEDA', low: '#EAF3DE' }
 const priorityText = { high: '#993C1D', medium: '#854F0B', low: '#3B6D11' }
+const avatarPalette = [
+  { bg: '#E1F5EE', text: '#0F6E56' },
+  { bg: '#FAEEDA', text: '#854F0B' },
+  { bg: '#FAECE7', text: '#993C1D' },
+  { bg: '#EEEDFE', text: '#3C3489' },
+  { bg: '#E6F1FB', text: '#185FA5' },
+]
+
+const initials = (name) => (name || '?').split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()
+const avatarColor = (name) => avatarPalette[(name || '').charCodeAt(0) % avatarPalette.length || 0]
 
 export default function ProjectPage() {
   const { id: projectId } = useParams()
   const navigate = useNavigate()
 
   const [project, setProject] = useState(null)
-  const [tasks, setTasks] = useState({ todo: [], in_progress: [], done: [] })
+  const [tasks, setTasks] = useState([])
+  const [members, setMembers] = useState([])
   const [files, setFiles] = useState([])
   const [myRole, setMyRole] = useState('member') // 'owner' = mentor/admin для этого проекта
   const [loading, setLoading] = useState(true)
@@ -37,7 +35,12 @@ export default function ProjectPage() {
   const [showFileModal, setShowFileModal] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newPriority, setNewPriority] = useState('medium')
+  const [newAssigneeId, setNewAssigneeId] = useState('')
   const [selectedFile, setSelectedFile] = useState(null)
+
+  const [filterAssignee, setFilterAssignee] = useState('')
+  const [filterPriority, setFilterPriority] = useState('')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     loadData()
@@ -56,18 +59,16 @@ export default function ProjectPage() {
     setLoading(true)
     setError('')
     try {
-      const [projectRes, tasksRes, roleRes] = await Promise.all([
+      const [projectRes, tasksRes, roleRes, membersRes] = await Promise.all([
         api.get(`/api/projects/${projectId}`),
         api.get(`/api/projects/${projectId}/tasks`),
         api.get(`/api/projects/${projectId}/my-role`),
+        api.get(`/api/projects/${projectId}/members`),
       ])
       setProject(projectRes.data)
       setMyRole(roleRes.data.role)
-      const grouped = { todo: [], in_progress: [], done: [] }
-      for (const task of tasksRes.data) {
-        grouped[task.status]?.push(task)
-      }
-      setTasks(grouped)
+      setTasks(tasksRes.data)
+      setMembers(membersRes.data)
       await loadFiles()
     } catch (err) {
       setError('Could not load this project.')
@@ -76,43 +77,65 @@ export default function ProjectPage() {
     }
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    navigate('/login')
-  }
+  // id -> имя, чтобы показать аватарку исполнителя на карточке (задачи хранят только assignee_id)
+  const memberName = useMemo(() => {
+    const map = new Map()
+    for (const m of members) map.set(m.user_id, m.name)
+    return map
+  }, [members])
+
+  const students = members.filter((m) => m.role === 'member')
+
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((t) => {
+      if (filterAssignee && t.assignee_id !== filterAssignee) return false
+      if (filterPriority && t.priority !== filterPriority) return false
+      if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false
+      return true
+    })
+  }, [tasks, filterAssignee, filterPriority, search])
+
+  const grouped = useMemo(() => {
+    const g = { todo: [], in_progress: [], done: [] }
+    for (const t of filteredTasks) g[t.status]?.push(t)
+    return g
+  }, [filteredTasks])
+
+  const hasFilters = filterAssignee || filterPriority || search
+  const clearFilters = () => { setFilterAssignee(''); setFilterPriority(''); setSearch('') }
 
   const onDragEnd = async (result) => {
-    const { source, destination } = result
+    const { source, destination, draggableId } = result
     if (!destination) return
-    if (source.droppableId === destination.droppableId && source.index === destination.index) return
+    if (source.droppableId === destination.droppableId) return
 
-    const sourceCol = [...tasks[source.droppableId]]
-    const destCol = source.droppableId === destination.droppableId ? sourceCol : [...tasks[destination.droppableId]]
-    const [moved] = sourceCol.splice(source.index, 1)
-    destCol.splice(destination.index, 0, moved)
+    const newStatus = destination.droppableId
+    const prevTasks = tasks
+    setTasks(tasks.map((t) => (t.id === draggableId ? { ...t, status: newStatus } : t)))
 
-    const newTasks = { ...tasks, [source.droppableId]: sourceCol, [destination.droppableId]: destCol }
-    setTasks(newTasks)
-
-    if (source.droppableId !== destination.droppableId) {
-      try {
-        await api.put(`/api/projects/${projectId}/tasks/${moved.id}`, { status: destination.droppableId })
-      } catch (err) {
-        loadData()
-      }
+    try {
+      await api.put(`/api/projects/${projectId}/tasks/${draggableId}`, { status: newStatus })
+    } catch (err) {
+      setTasks(prevTasks)
+      alert(err.response?.data?.detail || 'Could not update task status.')
     }
   }
 
   const handleCreateTask = async () => {
     if (!newTitle.trim()) return
     try {
-      const res = await api.post(`/api/projects/${projectId}/tasks`, { title: newTitle, priority: newPriority })
-      setTasks({ ...tasks, todo: [...tasks.todo, res.data] })
+      const res = await api.post(`/api/projects/${projectId}/tasks`, {
+        title: newTitle,
+        priority: newPriority,
+        assignee_id: newAssigneeId || null,
+      })
+      setTasks([...tasks, res.data])
       setShowModal(false)
       setNewTitle('')
       setNewPriority('medium')
+      setNewAssigneeId('')
     } catch (err) {
-      alert('Could not create task.')
+      alert(err.response?.data?.detail || 'Could not create task.')
     }
   }
 
@@ -152,42 +175,7 @@ export default function ProjectPage() {
 
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: '#F6FAF7' }}>
-      <aside className="w-60 bg-white border-r border-gray-200 flex flex-col py-6 px-4 fixed h-full">
-        <div className="flex items-center gap-2 mb-8 px-2">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#0D631B' }}>
-            <div className="grid grid-cols-2 gap-0.5 p-1.5">
-              <div className="bg-white rounded-sm w-2.5 h-2.5"></div>
-              <div className="bg-white rounded-sm w-2.5 h-2.5"></div>
-              <div className="bg-white rounded-sm w-2.5 h-2.5"></div>
-              <div className="bg-white rounded-sm w-2.5 h-2.5"></div>
-            </div>
-          </div>
-          <span className="font-semibold text-lg" style={{ color: '#0D631B' }}>Trackly</span>
-        </div>
-        <nav className="flex flex-col gap-1 flex-1">
-          {navItems.map((item) => (
-            <button
-              key={item.name}
-              onClick={() => navigate(routeFor(item.name))}
-              className={`text-left px-3 py-2 text-sm font-medium transition flex items-center gap-3 ${
-                item.name === 'Projects' ? 'border-l-4 rounded-r-lg' : 'border-l-4 border-transparent rounded-lg hover:bg-gray-100 text-gray-600'
-              }`}
-              style={item.name === 'Projects' ? { backgroundColor: '#D9E6DA', borderColor: '#0D631B', color: '#0D631B' } : {}}
-            >
-              {item.icon}
-              {item.name}
-            </button>
-          ))}
-        </nav>
-        <div className="border-t border-gray-200 pt-4 flex flex-col gap-1">
-          <button className="text-left px-3 py-2 text-sm text-gray-500 hover:bg-gray-100 rounded-lg flex items-center gap-3">
-            <HelpCircle size={16} /> Support
-          </button>
-          <button onClick={handleLogout} className="text-left px-3 py-2 text-sm text-gray-500 hover:text-red-500 transition flex items-center gap-3 rounded-lg">
-            <LogOut size={16} /> Sign Out
-          </button>
-        </div>
-      </aside>
+      <Sidebar active="Projects" />
 
       <main className="ml-60 flex-1 min-h-screen p-8" style={{ backgroundColor: '#F6FAF7' }}>
         <div className="bg-white border border-gray-200 rounded-lg p-5 mb-6 flex items-center justify-between">
@@ -202,18 +190,57 @@ export default function ProjectPage() {
           )}
         </div>
 
+        {/* Filters */}
+        <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search tasks..."
+              className="w-full border border-gray-200 rounded-lg pl-8 pr-3 py-2 text-sm focus:outline-none focus:border-green-500"
+            />
+          </div>
+          <select
+            value={filterAssignee}
+            onChange={(e) => setFilterAssignee(e.target.value)}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-green-500"
+          >
+            <option value="">All students</option>
+            {students.map((s) => (
+              <option key={s.user_id} value={s.user_id}>{s.name}</option>
+            ))}
+          </select>
+          <select
+            value={filterPriority}
+            onChange={(e) => setFilterPriority(e.target.value)}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-green-500"
+          >
+            <option value="">All priorities</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+          {hasFilters && (
+            <button onClick={clearFilters} className="text-sm hover:underline" style={{ color: '#0D631B' }}>
+              Clear filters
+            </button>
+          )}
+        </div>
+
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="grid grid-cols-3 gap-4">
             {Object.entries(columns).map(([key, label]) => (
               <div key={key}>
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm font-medium text-gray-600">{label}</span>
-                  <span className="text-xs bg-white border border-gray-200 rounded-full px-2 py-0.5 text-gray-500">{tasks[key].length}</span>
+                  <span className="text-xs bg-white border border-gray-200 rounded-full px-2 py-0.5 text-gray-500">{grouped[key].length}</span>
                 </div>
                 <Droppable droppableId={key}>
                   {(provided) => (
                     <div ref={provided.innerRef} {...provided.droppableProps} className="min-h-[40px]">
-                      {tasks[key].map((task, index) => (
+                      {grouped[key].map((task, index) => (
                         <Draggable key={task.id} draggableId={task.id} index={index}>
                           {(provided) => (
                             <div
@@ -222,12 +249,26 @@ export default function ProjectPage() {
                               {...provided.dragHandleProps}
                               className="bg-white border border-gray-200 rounded-lg p-3 mb-2.5"
                             >
-                              <span
-                                className="text-xs px-2 py-1 font-medium rounded inline-block mb-2"
-                                style={{ backgroundColor: priorityBg[task.priority], color: priorityText[task.priority] }}
-                              >
-                                {task.priority}
-                              </span>
+                              <div className="flex items-center justify-between mb-2">
+                                <span
+                                  className="text-xs px-2 py-1 font-medium rounded inline-block"
+                                  style={{ backgroundColor: priorityBg[task.priority], color: priorityText[task.priority] }}
+                                >
+                                  {task.priority}
+                                </span>
+                                {task.assignee_id && memberName.get(task.assignee_id) && (
+                                  <span
+                                    title={memberName.get(task.assignee_id)}
+                                    className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold"
+                                    style={{
+                                      backgroundColor: avatarColor(memberName.get(task.assignee_id)).bg,
+                                      color: avatarColor(memberName.get(task.assignee_id)).text,
+                                    }}
+                                  >
+                                    {initials(memberName.get(task.assignee_id))}
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-sm font-medium text-gray-800 mb-2">{task.title}</p>
                               {task.deadline && (
                                 <span className="text-xs text-gray-400 flex items-center gap-1">
@@ -240,6 +281,9 @@ export default function ProjectPage() {
                         </Draggable>
                       ))}
                       {provided.placeholder}
+                      {grouped[key].length === 0 && (
+                        <p className="text-xs text-gray-400 px-1">No tasks.</p>
+                      )}
                     </div>
                   )}
                 </Droppable>
@@ -313,6 +357,19 @@ export default function ProjectPage() {
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
                   <option value="high">High</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm text-gray-600 mb-1 block">Assignee</label>
+                <select
+                  value={newAssigneeId}
+                  onChange={(e) => setNewAssigneeId(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                >
+                  <option value="">Unassigned</option>
+                  {students.map((s) => (
+                    <option key={s.user_id} value={s.user_id}>{s.name}</option>
+                  ))}
                 </select>
               </div>
             </div>

@@ -42,3 +42,11 @@ def require_project_owner(project: Project, current_user: User) -> None:
         return
     if project.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Only the project mentor can do this")
+
+
+def get_accessible_project_ids(current_user: User, db: Session) -> list:
+    """Все ID проектов, которые пользователь может видеть: admin — все, иначе — где он участник."""
+    if is_admin(current_user):
+        return [p.id for p in db.query(Project.id).all()]
+    rows = db.query(ProjectMember.project_id).filter(ProjectMember.user_id == current_user.id).all()
+    return [r[0] for r in rows]
