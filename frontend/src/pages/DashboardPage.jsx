@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LayoutDashboard, FolderOpen, CheckSquare, File, Users, Settings, HelpCircle, LogOut, Calendar } from 'lucide-react'
+import { LayoutDashboard, FolderOpen, CheckSquare, File, Users, Settings, HelpCircle, LogOut, Calendar, ShieldCheck } from 'lucide-react'
 import api from '../services/api'
 
 const navItems = [
@@ -14,7 +14,7 @@ const navItems = [
 
 const routeFor = (name) => ({
   Dashboard: '/dashboard', Projects: '/projects', Tasks: '/tasks',
-  Files: '/files', Team: '/team', Settings: '/settings',
+  Files: '/files', Team: '/team', Admin: '/admin', Settings: '/settings',
 }[name])
 
 export default function DashboardPage() {
@@ -26,9 +26,11 @@ export default function DashboardPage() {
   const [newTitle, setNewTitle] = useState('')
   const [newDescription, setNewDescription] = useState('')
   const [creating, setCreating] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
     loadProjects()
+    api.get('/api/auth/me').then((res) => setIsAdmin(res.data.role === 'admin')).catch(() => {})
   }, [])
 
   const loadProjects = async () => {
@@ -110,6 +112,15 @@ export default function DashboardPage() {
               {item.name}
             </button>
           ))}
+          {isAdmin && (
+            <button
+              onClick={() => navigate('/admin')}
+              className="text-left px-3 py-2 text-sm font-medium transition flex items-center gap-3 border-l-4 border-transparent rounded-lg hover:bg-gray-100 text-gray-600"
+            >
+              <ShieldCheck size={16} />
+              Admin
+            </button>
+          )}
         </nav>
         <div className="border-t border-gray-200 pt-4 flex flex-col gap-1">
           <button className="text-left px-3 py-2 text-sm text-gray-500 hover:bg-gray-100 rounded-lg flex items-center gap-3">

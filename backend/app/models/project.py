@@ -24,6 +24,7 @@ class Project(Base):
     owner = relationship("User", back_populates="owned_projects")
     members = relationship("ProjectMember", back_populates="project", cascade="all, delete-orphan")
     tasks = relationship("Task", back_populates="project", cascade="all, delete-orphan")
+    files = relationship("ProjectFile", back_populates="project", cascade="all, delete-orphan")
 
 
 class ProjectMember(Base):

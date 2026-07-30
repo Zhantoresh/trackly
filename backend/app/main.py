@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.routers import auth, tasks, projects, files, roles, stats
+from app.routers import auth, tasks, projects, files, roles, stats, admin, project_files
 from app.config import settings
 
 # Schema is managed by Alembic migrations (see Dockerfile CMD: `alembic upgrade head`),
@@ -35,6 +35,8 @@ app.include_router(projects.router)
 app.include_router(files.router)
 app.include_router(roles.router)
 app.include_router(stats.router)
+app.include_router(admin.router)
+app.include_router(project_files.router)
 
 @app.get("/")
 def root():

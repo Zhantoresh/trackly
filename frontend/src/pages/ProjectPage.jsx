@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import { useNavigate, useParams } from 'react-router-dom'
-import { LayoutDashboard, FolderOpen, CheckSquare, File, Users, Settings, HelpCircle, LogOut, Calendar } from 'lucide-react'
+import { LayoutDashboard, FolderOpen, CheckSquare, File, Users, Settings, HelpCircle, LogOut, Calendar, Trash2 } from 'lucide-react'
 import api from '../services/api'
 
 const navItems = [
@@ -30,13 +30,13 @@ export default function ProjectPage() {
   const [project, setProject] = useState(null)
   const [tasks, setTasks] = useState({ todo: [], in_progress: [], done: [] })
   const [files, setFiles] = useState([])
+  const [myRole, setMyRole] = useState('member') // 'owner' = mentor/admin для этого проекта
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [showFileModal, setShowFileModal] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newPriority, setNewPriority] = useState('medium')
-  const [selectedTaskId, setSelectedTaskId] = useState('')
   const [selectedFile, setSelectedFile] = useState(null)
 
   useEffect(() => {
@@ -45,23 +45,24 @@ export default function ProjectPage() {
 
   const loadFiles = async () => {
     try {
-      const res = await api.get(`/api/projects/files/project/${projectId}`)
-      console.log('Files:', res.data)
+      const res = await api.get(`/api/projects/${projectId}/files`)
       setFiles(res.data)
-    }   catch (err) {
+    } catch (err) {
       console.error('Could not load files')
+    }
   }
-}
 
   const loadData = async () => {
     setLoading(true)
     setError('')
     try {
-      const [projectRes, tasksRes] = await Promise.all([
+      const [projectRes, tasksRes, roleRes] = await Promise.all([
         api.get(`/api/projects/${projectId}`),
         api.get(`/api/projects/${projectId}/tasks`),
+        api.get(`/api/projects/${projectId}/my-role`),
       ])
       setProject(projectRes.data)
+      setMyRole(roleRes.data.role)
       const grouped = { todo: [], in_progress: [], done: [] }
       for (const task of tasksRes.data) {
         grouped[task.status]?.push(task)
@@ -116,19 +117,28 @@ export default function ProjectPage() {
   }
 
   const handleFileUpload = async () => {
-    if (!selectedTaskId || !selectedFile) return
+    if (!selectedFile) return
     const formData = new FormData()
     formData.append('file', selectedFile)
     try {
-      await api.post(`/api/projects/${projectId}/tasks/${selectedTaskId}/files`, formData, {
+      await api.post(`/api/projects/${projectId}/files`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
       setShowFileModal(false)
-      setSelectedTaskId('')
       setSelectedFile(null)
       loadFiles()
     } catch (err) {
-      alert('Could not upload file.')
+      alert(err.response?.data?.detail || 'Could not upload file.')
+    }
+  }
+
+  const handleDeleteFile = async (fileId) => {
+    if (!confirm('Delete this file?')) return
+    try {
+      await api.delete(`/api/projects/${projectId}/files/${fileId}`)
+      setFiles(files.filter((f) => f.id !== fileId))
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Could not delete file.')
     }
   }
 
@@ -185,9 +195,11 @@ export default function ProjectPage() {
             <h1 className="text-lg font-semibold text-gray-800">{project?.title}</h1>
             <p className="text-sm text-gray-500">{project?.description}</p>
           </div>
-          <button onClick={() => setShowModal(true)} className="text-white px-4 py-2 rounded-lg text-sm font-medium" style={{ backgroundColor: '#0D631B' }}>
-            + Add Task
-          </button>
+          {myRole === 'owner' && (
+            <button onClick={() => setShowModal(true)} className="text-white px-4 py-2 rounded-lg text-sm font-medium" style={{ backgroundColor: '#0D631B' }}>
+              + Add Task
+            </button>
+          )}
         </div>
 
         <DragDropContext onDragEnd={onDragEnd}>
@@ -236,17 +248,19 @@ export default function ProjectPage() {
           </div>
         </DragDropContext>
 
-        {/* Files section */}
+        {/* Files section — общая папка проекта. Загружает только mentor/admin, скачивают все участники. */}
         <div className="mt-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold text-gray-800">Files</h2>
-            <button
-              onClick={() => setShowFileModal(true)}
-              className="text-white px-4 py-2 rounded-lg text-sm font-medium"
-              style={{ backgroundColor: '#0D631B' }}
-            >
-              + Upload File
-            </button>
+            {myRole === 'owner' && (
+              <button
+                onClick={() => setShowFileModal(true)}
+                className="text-white px-4 py-2 rounded-lg text-sm font-medium"
+                style={{ backgroundColor: '#0D631B' }}
+              >
+                + Upload File
+              </button>
+            )}
           </div>
           {files.length === 0 ? (
             <p className="text-sm text-gray-400">No files uploaded yet.</p>
@@ -261,6 +275,11 @@ export default function ProjectPage() {
                   <a href={file.file_url} target="_blank" rel="noreferrer" className="text-xs hover:underline" style={{ color: '#0D631B' }}>
                     Download
                   </a>
+                  {myRole === 'owner' && (
+                    <button onClick={() => handleDeleteFile(file.id)} className="text-gray-400 hover:text-red-500 transition">
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -315,19 +334,6 @@ export default function ProjectPage() {
           <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">Upload File</h2>
             <div className="flex flex-col gap-3">
-              <div>
-                <label className="text-sm text-gray-600 mb-1 block">Select Task</label>
-                <select
-                  value={selectedTaskId}
-                  onChange={(e) => setSelectedTaskId(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
-                >
-                  <option value="">Choose a task...</option>
-                  {[...tasks.todo, ...tasks.in_progress, ...tasks.done].map((task) => (
-                    <option key={task.id} value={task.id}>{task.title}</option>
-                  ))}
-                </select>
-              </div>
               <div>
                 <label className="text-sm text-gray-600 mb-1 block">File</label>
                 <input
