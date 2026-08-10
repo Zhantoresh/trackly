@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 
 export default function LoginPage() {
@@ -60,10 +60,6 @@ export default function LoginPage() {
             Sign in
           </button>
         </form>
-        <p className="text-sm text-gray-500 mt-4 text-center">
-          Don't have an account?{' '}
-          <Link to="/register" className="text-green-700 hover:underline">Sign up</Link>
-        </p>
       </div>
       <p className="text-xs text-gray-400 mt-6">© 2026 Trackly.</p>
     </div>

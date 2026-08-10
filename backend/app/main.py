@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.routers import auth, tasks, projects, files, roles, stats
+from app.routers import auth, tasks, projects, files, roles, stats, admin, project_files, tasks_overview, dashboard
 from app.config import settings
 
 # Schema is managed by Alembic migrations (see Dockerfile CMD: `alembic upgrade head`),
@@ -15,10 +15,11 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "https://trackly.vercel.app",
-        "https://trackly-mo3g.vercel.app",
-          
     ],
+    # Vercel даёт новый поддомен *.vercel.app при переименовании проекта и на каждый
+    # preview-деплой (trackly-mauve.vercel.app, trackly-git-<branch>-<team>.vercel.app и т.д.).
+    # Регэксп покрывает всё это разом, без правки кода на каждый передеплой.
+    allow_origin_regex=r"https://trackly(-[a-z0-9]+)*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -35,6 +36,10 @@ app.include_router(projects.router)
 app.include_router(files.router)
 app.include_router(roles.router)
 app.include_router(stats.router)
+app.include_router(admin.router)
+app.include_router(project_files.router)
+app.include_router(tasks_overview.router)
+app.include_router(dashboard.router)
 
 @app.get("/")
 def root():

@@ -4,6 +4,7 @@ from app.database import get_db
 from app.models.project import Project, ProjectMember, ProjectRole
 from app.models.user import User
 from app.routers.auth import get_current_user
+from app.permissions import get_project_or_404, require_project_access, require_project_owner
 from pydantic import BaseModel
 from uuid import UUID
 from datetime import datetime
@@ -22,35 +23,14 @@ class MemberResponse(BaseModel):
         from_attributes = True
 
 
-def get_project_or_404(project_id: UUID, db: Session) -> Project:
-    project = db.query(Project).filter(Project.id == project_id).first()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-    return project
-
-
-def require_owner(project: Project, current_user: User):
-    if project.owner_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Only owner can do this")
-
-
-def get_my_role(project_id: UUID, current_user: User, db: Session) -> ProjectRole:
-    member = db.query(ProjectMember).filter(
-        ProjectMember.project_id == project_id,
-        ProjectMember.user_id == current_user.id
-    ).first()
-    if not member:
-        raise HTTPException(status_code=403, detail="You are not a member of this project")
-    return member.role
-
-
 @router.get("/{project_id}/members", response_model=list[MemberResponse])
 def get_members(
     project_id: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    get_my_role(project_id, current_user, db)
+    project = get_project_or_404(project_id, db)
+    require_project_access(project, current_user, db)
     members = db.query(ProjectMember).filter(
         ProjectMember.project_id == project_id
     ).all()
@@ -72,7 +52,10 @@ def my_role(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    role = get_my_role(project_id, current_user, db)
+    project = get_project_or_404(project_id, db)
+    member = require_project_access(project, current_user, db)
+    # admin может не быть участником проекта — тогда роль условная, для UI
+    role = member.role if member else ProjectRole.owner
     return {"role": role}
 
 
@@ -85,7 +68,7 @@ def change_role(
     current_user: User = Depends(get_current_user)
 ):
     project = get_project_or_404(project_id, db)
-    require_owner(project, current_user)
+    require_project_owner(project, current_user)
 
     if user_id == current_user.id:
         raise HTTPException(status_code=400, detail="Cannot change your own role")

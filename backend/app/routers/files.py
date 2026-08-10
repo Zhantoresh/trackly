@@ -2,8 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.task import Task, TaskFile
+from app.models.project import Project
 from app.models.user import User
 from app.routers.auth import get_current_user
+from app.permissions import get_project_or_404, require_project_access
 from app.config import settings
 from pydantic import BaseModel
 from uuid import UUID
@@ -35,6 +37,9 @@ async def upload_file(
     current_user: User = Depends(get_current_user)
 ):
     try:
+        project = get_project_or_404(project_id, db)
+        require_project_access(project, current_user, db)
+
         task = db.query(Task).filter(Task.id == task_id, Task.project_id == project_id).first()
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
@@ -75,6 +80,8 @@ def get_files(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    project = get_project_or_404(project_id, db)
+    require_project_access(project, current_user, db)
     task = db.query(Task).filter(Task.id == task_id, Task.project_id == project_id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -90,6 +97,8 @@ def delete_file(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    project = get_project_or_404(project_id, db)
+    require_project_access(project, current_user, db)
     task_file = db.query(TaskFile).filter(TaskFile.id == file_id, TaskFile.task_id == task_id).first()
     if not task_file:
         raise HTTPException(status_code=404, detail="File not found")
@@ -114,6 +123,8 @@ def get_project_files(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    project = get_project_or_404(project_id, db)
+    require_project_access(project, current_user, db)
     tasks = db.query(Task).filter(Task.project_id == project_id).all()
     task_ids = [t.id for t in tasks]
     files = db.query(TaskFile).filter(TaskFile.task_id.in_(task_ids)).all()
