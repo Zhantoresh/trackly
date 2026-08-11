@@ -33,6 +33,9 @@ export default function ProjectPage() {
   const [error, setError] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [showFileModal, setShowFileModal] = useState(false)
+  const [showAddStudentModal, setShowAddStudentModal] = useState(false)
+  const [availableStudents, setAvailableStudents] = useState([])
+  const [selectedStudentId, setSelectedStudentId] = useState('')
   const [newTitle, setNewTitle] = useState('')
   const [newPriority, setNewPriority] = useState('medium')
   const [newAssigneeId, setNewAssigneeId] = useState('')
@@ -165,6 +168,29 @@ export default function ProjectPage() {
     }
   }
 
+  const openAddStudentModal = async () => {
+    try {
+      const res = await api.get(`/api/projects/${projectId}/available-students`)
+      setAvailableStudents(res.data)
+      setSelectedStudentId('')
+      setShowAddStudentModal(true)
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Could not load students.')
+    }
+  }
+
+  const handleAddStudent = async () => {
+    if (!selectedStudentId) return
+    try {
+      await api.post(`/api/projects/${projectId}/members`, { user_id: selectedStudentId })
+      setShowAddStudentModal(false)
+      setSelectedStudentId('')
+      loadData()
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Could not add student.')
+    }
+  }
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center text-gray-500 text-sm">Loading...</div>
   }
@@ -184,9 +210,14 @@ export default function ProjectPage() {
             <p className="text-sm text-gray-500">{project?.description}</p>
           </div>
           {myRole === 'owner' && (
-            <button onClick={() => setShowModal(true)} className="text-white px-4 py-2 rounded-lg text-sm font-medium" style={{ backgroundColor: '#0D631B' }}>
-              + Add Task
-            </button>
+            <div className="flex items-center gap-2">
+              <button onClick={openAddStudentModal} className="border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50">
+                + Add Student
+              </button>
+              <button onClick={() => setShowModal(true)} className="text-white px-4 py-2 rounded-lg text-sm font-medium" style={{ backgroundColor: '#0D631B' }}>
+                + Add Task
+              </button>
+            </div>
           )}
         </div>
 
@@ -228,7 +259,6 @@ export default function ProjectPage() {
             </button>
           )}
         </div>
-
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="grid grid-cols-3 gap-4">
             {Object.entries(columns).map(([key, label]) => (
@@ -413,6 +443,47 @@ export default function ProjectPage() {
                 style={{ backgroundColor: '#0D631B' }}
               >
                 Upload
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Student Modal */}
+      {showAddStudentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">Add Student to Project</h2>
+            {availableStudents.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                No students available to add — either everyone is already in this project, or no student accounts exist yet.
+              </p>
+            ) : (
+              <div>
+                <label className="text-sm text-gray-600 mb-1 block">Student</label>
+                <select
+                  value={selectedStudentId}
+                  onChange={(e) => setSelectedStudentId(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                >
+                  <option value="">Select a student</option>
+                  {availableStudents.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name} ({s.email})</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className="flex gap-3 mt-5">
+              <button onClick={() => setShowAddStudentModal(false)} className="flex-1 border border-gray-200 rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50 transition">
+                Cancel
+              </button>
+              <button
+                onClick={handleAddStudent}
+                disabled={!selectedStudentId}
+                className="flex-1 text-white rounded-lg py-2 text-sm font-medium disabled:opacity-50"
+                style={{ backgroundColor: '#0D631B' }}
+              >
+                Add
               </button>
             </div>
           </div>

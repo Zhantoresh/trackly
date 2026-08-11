@@ -38,6 +38,15 @@ class MemberAdd(BaseModel):
     user_id: UUID
 
 
+class AvailableStudent(BaseModel):
+    id: UUID
+    name: str
+    email: str
+
+    class Config:
+        from_attributes = True
+
+
 @router.post("", response_model=ProjectResponse)
 def create_project(data: ProjectCreate, db: Session = Depends(get_db), current_user: User = Depends(require_mentor)):
     """Только mentor (или admin) может создавать проекты."""
@@ -85,6 +94,19 @@ def delete_project(project_id: UUID, db: Session = Depends(get_db), current_user
     db.delete(project)
     db.commit()
     return {"message": "Project deleted"}
+
+
+@router.get("/{project_id}/available-students", response_model=list[AvailableStudent])
+def get_available_students(project_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Студенты, которых mentor-владелец (или admin) ещё может добавить в этот проект."""
+    project = get_project_or_404(project_id, db)
+    require_project_owner(project, current_user)
+
+    existing_ids = {
+        m.user_id for m in db.query(ProjectMember).filter(ProjectMember.project_id == project_id).all()
+    }
+    students = db.query(User).filter(User.role == UserRole.student).all()
+    return [s for s in students if s.id not in existing_ids]
 
 
 @router.post("/{project_id}/members")
