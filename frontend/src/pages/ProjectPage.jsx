@@ -28,7 +28,7 @@ export default function ProjectPage() {
   const [tasks, setTasks] = useState([])
   const [members, setMembers] = useState([])
   const [files, setFiles] = useState([])
-  const [myRole, setMyRole] = useState('member') // 'owner' = mentor/admin для этого проекта
+  const [myRole, setMyRole] = useState('member')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showModal, setShowModal] = useState(false)
@@ -41,9 +41,11 @@ export default function ProjectPage() {
   const [editTitle, setEditTitle] = useState('')
   const [editPriority, setEditPriority] = useState('medium')
   const [editAssigneeId, setEditAssigneeId] = useState('')
+  const [editDeadline, setEditDeadline] = useState('')
   const [newTitle, setNewTitle] = useState('')
   const [newPriority, setNewPriority] = useState('medium')
   const [newAssigneeId, setNewAssigneeId] = useState('')
+  const [newDeadline, setNewDeadline] = useState('')
   const [selectedFile, setSelectedFile] = useState(null)
 
   const [filterAssignee, setFilterAssignee] = useState('')
@@ -85,7 +87,6 @@ export default function ProjectPage() {
     }
   }
 
-  // id -> имя, чтобы показать аватарку исполнителя на карточке (задачи хранят только assignee_id)
   const memberName = useMemo(() => {
     const map = new Map()
     for (const m of members) map.set(m.user_id, m.name)
@@ -136,21 +137,25 @@ export default function ProjectPage() {
         title: newTitle,
         priority: newPriority,
         assignee_id: newAssigneeId || null,
+        deadline: newDeadline || null,
       })
       setTasks([...tasks, res.data])
       setShowModal(false)
       setNewTitle('')
       setNewPriority('medium')
       setNewAssigneeId('')
+      setNewDeadline('')
     } catch (err) {
       alert(err.response?.data?.detail || 'Could not create task.')
     }
   }
+
   const openEditModal = (task) => {
     setEditingTask(task)
     setEditTitle(task.title)
     setEditPriority(task.priority)
     setEditAssigneeId(task.assignee_id || '')
+    setEditDeadline(task.deadline ? task.deadline.slice(0, 10) : '')
     setShowEditModal(true)
   }
 
@@ -161,6 +166,7 @@ export default function ProjectPage() {
         title: editTitle,
         priority: editPriority,
         assignee_id: editAssigneeId || null,
+        deadline: editDeadline || null,
       })
       setTasks(tasks.map((t) => (t.id === editingTask.id ? res.data : t)))
       setShowEditModal(false)
@@ -169,6 +175,7 @@ export default function ProjectPage() {
       alert(err.response?.data?.detail || 'Could not update task.')
     }
   }
+
   const handleFileUpload = async () => {
     if (!selectedFile) return
     const formData = new FormData()
@@ -430,6 +437,15 @@ export default function ProjectPage() {
                   ))}
                 </select>
               </div>
+              <div>
+                <label className="text-sm text-gray-600 mb-1 block">Deadline</label>
+                <input
+                  type="date"
+                  value={newDeadline}
+                  onChange={(e) => setNewDeadline(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                />
+              </div>
             </div>
             <div className="flex gap-3 mt-5">
               <button onClick={() => setShowModal(false)} className="flex-1 border border-gray-200 rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50 transition">
@@ -476,6 +492,7 @@ export default function ProjectPage() {
           </div>
         </div>
       )}
+
       {/* Edit Task Modal */}
       {showEditModal && editingTask && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
@@ -516,6 +533,15 @@ export default function ProjectPage() {
                   ))}
                 </select>
               </div>
+              <div>
+                <label className="text-sm text-gray-600 mb-1 block">Deadline</label>
+                <input
+                  type="date"
+                  value={editDeadline}
+                  onChange={(e) => setEditDeadline(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                />
+              </div>
             </div>
             <div className="flex gap-3 mt-5">
               <button onClick={() => setShowEditModal(false)} className="flex-1 border border-gray-200 rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50 transition">
@@ -528,6 +554,7 @@ export default function ProjectPage() {
           </div>
         </div>
       )}
+
       {/* Add Student Modal */}
       {showAddStudentModal && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
