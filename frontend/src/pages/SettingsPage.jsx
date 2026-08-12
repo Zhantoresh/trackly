@@ -33,6 +33,7 @@ export default function SettingsPage() {
   const applySidebarCollapsed = (value) => {
     setSidebarCollapsed(value)
     localStorage.setItem('trackly_sidebar_collapsed', String(value))
+    window.dispatchEvent(new CustomEvent('trackly_sidebar_toggle', { detail: value }))
   }
 
   const applyLanguage = (value) => {
