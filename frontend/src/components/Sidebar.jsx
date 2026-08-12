@@ -17,8 +17,6 @@ const routeFor = (name) => ({
   Files: '/files', Team: '/team', Admin: '/admin', Settings: '/settings',
 }[name])
 
-/** Общий сайдбар для всех страниц. `active` — имя текущего пункта (совпадает с navItems/'Admin').
- * Пункт Admin показывается только пользователям с ролью admin — сам спрашивает /api/auth/me. */
 export default function Sidebar({ active }) {
   const navigate = useNavigate()
   const [isAdmin, setIsAdmin] = useState(false)
@@ -33,13 +31,19 @@ export default function Sidebar({ active }) {
   }
 
   const itemClass = (name) =>
-    `text-left px-3 py-2 text-sm font-medium transition flex items-center gap-3 ${
-      name === active ? 'border-l-4 rounded-r-lg' : 'border-l-4 border-transparent rounded-lg hover:bg-gray-100 text-gray-600'
+    `text-left px-3 py-2 text-sm font-medium transition flex items-center gap-3 rounded-lg ${
+      name === active ? 'border-l-4' : 'border-l-4 border-transparent hover:bg-black hover:bg-opacity-5'
     }`
-  const itemStyle = (name) => (name === active ? { backgroundColor: '#D9E6DA', borderColor: '#0D631B', color: '#0D631B' } : {})
+  const itemStyle = (name) =>
+    name === active
+      ? { backgroundColor: '#D9E6DA', borderColor: '#0D631B', color: '#0D631B' }
+      : { color: 'var(--text-secondary)' }
 
   return (
-    <aside className="w-60 bg-white border-r border-gray-200 flex flex-col py-6 px-4 fixed h-full">
+    <aside
+      className="w-60 border-r flex flex-col py-6 px-4 fixed h-full"
+      style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}
+    >
       <div className="flex items-center gap-2 mb-8 px-2">
         <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#0D631B' }}>
           <div className="grid grid-cols-2 gap-0.5 p-1.5">
@@ -53,12 +57,7 @@ export default function Sidebar({ active }) {
       </div>
       <nav className="flex flex-col gap-1 flex-1">
         {navItems.map((item) => (
-          <button
-            key={item.name}
-            onClick={() => navigate(routeFor(item.name))}
-            className={itemClass(item.name)}
-            style={itemStyle(item.name)}
-          >
+          <button key={item.name} onClick={() => navigate(routeFor(item.name))} className={itemClass(item.name)} style={itemStyle(item.name)}>
             {item.icon}
             {item.name}
           </button>
@@ -70,11 +69,11 @@ export default function Sidebar({ active }) {
           </button>
         )}
       </nav>
-      <div className="border-t border-gray-200 pt-4 flex flex-col gap-1">
-        <button className="text-left px-3 py-2 text-sm text-gray-500 hover:bg-gray-100 rounded-lg flex items-center gap-3">
+      <div className="border-t pt-4 flex flex-col gap-1" style={{ borderColor: 'var(--border-card)' }}>
+        <button className="text-left px-3 py-2 text-sm hover:bg-black hover:bg-opacity-5 rounded-lg flex items-center gap-3" style={{ color: 'var(--text-muted)' }}>
           <HelpCircle size={16} /> Support
         </button>
-        <button onClick={handleLogout} className="text-left px-3 py-2 text-sm text-gray-500 hover:text-red-500 transition flex items-center gap-3 rounded-lg">
+        <button onClick={handleLogout} className="text-left px-3 py-2 text-sm hover:text-red-500 transition flex items-center gap-3 rounded-lg" style={{ color: 'var(--text-muted)' }}>
           <LogOut size={16} /> Sign Out
         </button>
       </div>
