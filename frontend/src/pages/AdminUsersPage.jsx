@@ -74,12 +74,12 @@ export default function AdminUsersPage() {
   const filteredUsers = roleFilter === 'all' ? users : users.filter((u) => u.role === roleFilter)
 
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: '#F6FAF7' }}>
+    <div className="flex min-h-screen" style={{ backgroundColor: 'var(--bg-page)' }}>
       <Sidebar active="Admin" />
 
-      <main className="ml-60 flex-1 min-h-screen p-8" style={{ backgroundColor: '#F6FAF7' }}>
+      <main className="ml-60 flex-1 min-h-screen p-8" style={{ backgroundColor: 'var(--bg-page)' }}>
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-semibold text-gray-800">Users</h1>
+          <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Users</h1>
           <button onClick={() => setShowCreateModal(true)} className="text-white px-4 py-2 rounded-lg text-sm font-medium transition" style={{ backgroundColor: '#0D631B' }}>
             + New User
           </button>
@@ -91,21 +91,25 @@ export default function AdminUsersPage() {
               key={r}
               onClick={() => setRoleFilter(r)}
               className="px-3 py-1.5 rounded-lg text-sm font-medium capitalize transition"
-              style={roleFilter === r ? { backgroundColor: '#D9E6DA', color: '#0D631B' } : { backgroundColor: 'white', color: '#5F5E5A', border: '1px solid #E5E7EB' }}
+              style={
+                roleFilter === r
+                  ? { backgroundColor: '#D9E6DA', color: '#0D631B' }
+                  : { backgroundColor: 'var(--bg-card)', color: 'var(--text-secondary)', border: '1px solid var(--border-card)' }
+              }
             >
               {r}
             </button>
           ))}
         </div>
 
-        {loading && <p className="text-sm text-gray-500">Loading users...</p>}
+        {loading && <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading users...</p>}
         {error && <p className="text-sm text-red-500">{error}</p>}
 
         {!loading && !error && (
-          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+          <div className="border rounded-lg overflow-hidden" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 text-left text-gray-500">
+                <tr className="border-b text-left" style={{ borderColor: 'var(--border-card)', color: 'var(--text-secondary)' }}>
                   <th className="px-5 py-3 font-medium">Name</th>
                   <th className="px-5 py-3 font-medium">Email</th>
                   <th className="px-5 py-3 font-medium">Role</th>
@@ -115,9 +119,9 @@ export default function AdminUsersPage() {
               </thead>
               <tbody>
                 {filteredUsers.map((u) => (
-                  <tr key={u.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
-                    <td className="px-5 py-3 text-gray-800 font-medium">{u.name}</td>
-                    <td className="px-5 py-3 text-gray-500">{u.email}</td>
+                  <tr key={u.id} className="border-b last:border-0 hover:bg-black hover:bg-opacity-5" style={{ borderColor: 'var(--border-card)' }}>
+                    <td className="px-5 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{u.name}</td>
+                    <td className="px-5 py-3" style={{ color: 'var(--text-secondary)' }}>{u.email}</td>
                     <td className="px-5 py-3">
                       {u.role === 'admin' ? (
                         <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ backgroundColor: roleBg.admin, color: roleText.admin }}>
@@ -135,10 +139,10 @@ export default function AdminUsersPage() {
                         </select>
                       )}
                     </td>
-                    <td className="px-5 py-3 text-gray-400">{new Date(u.created_at).toLocaleDateString()}</td>
+                    <td className="px-5 py-3" style={{ color: 'var(--text-muted)' }}>{new Date(u.created_at).toLocaleDateString()}</td>
                     <td className="px-5 py-3">
                       {u.role !== 'admin' && (
-                        <button onClick={() => handleDeleteUser(u.id)} className="text-gray-400 hover:text-red-500 transition">
+                        <button onClick={() => handleDeleteUser(u.id)} className="hover:text-red-500 transition" style={{ color: 'var(--text-muted)' }}>
                           <Trash2 size={16} />
                         </button>
                       )}
@@ -147,7 +151,7 @@ export default function AdminUsersPage() {
                 ))}
                 {filteredUsers.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-5 py-8 text-center text-gray-400">No users found.</td>
+                    <td colSpan={5} className="px-5 py-8 text-center" style={{ color: 'var(--text-muted)' }}>No users found.</td>
                   </tr>
                 )}
               </tbody>
@@ -158,46 +162,50 @@ export default function AdminUsersPage() {
 
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">New User</h2>
+          <div className="rounded-xl p-6 w-full max-w-md shadow-lg" style={{ backgroundColor: 'var(--bg-card)' }}>
+            <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>New User</h2>
             {formError && <p className="text-red-500 text-sm mb-3">{formError}</p>}
             <div className="flex flex-col gap-3">
               <div>
-                <label className="text-sm text-gray-600 mb-1 block">Full name</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Full name</label>
                 <input
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="Enter full name"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
                 />
               </div>
               <div>
-                <label className="text-sm text-gray-600 mb-1 block">Email</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Email</label>
                 <input
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   placeholder="name@company.com"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
                 />
               </div>
               <div>
-                <label className="text-sm text-gray-600 mb-1 block">Temporary password</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Temporary password</label>
                 <input
                   type="text"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   placeholder="Enter a password"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
                 />
               </div>
               <div>
-                <label className="text-sm text-gray-600 mb-1 block">Role</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Role</label>
                 <select
                   value={form.role}
                   onChange={(e) => setForm({ ...form, role: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
                 >
                   <option value="student">Student</option>
                   <option value="mentor">Mentor</option>
@@ -205,7 +213,7 @@ export default function AdminUsersPage() {
               </div>
             </div>
             <div className="flex gap-3 mt-5">
-              <button onClick={() => { setShowCreateModal(false); setForm(emptyForm); setFormError('') }} className="flex-1 border border-gray-200 rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50 transition">
+              <button onClick={() => { setShowCreateModal(false); setForm(emptyForm); setFormError('') }} className="flex-1 border rounded-lg py-2 text-sm hover:bg-gray-50 transition" style={{ borderColor: 'var(--border-card)', color: 'var(--text-secondary)' }}>
                 Cancel
               </button>
               <button
