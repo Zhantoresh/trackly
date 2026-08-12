@@ -226,26 +226,26 @@ export default function ProjectPage() {
   }
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-gray-500 text-sm">Loading...</div>
+    return <div className="min-h-screen flex items-center justify-center text-sm" style={{ backgroundColor: 'var(--bg-page)', color: 'var(--text-secondary)' }}>Loading...</div>
   }
 
   if (error) {
-    return <div className="min-h-screen flex items-center justify-center text-red-500 text-sm">{error}</div>
+    return <div className="min-h-screen flex items-center justify-center text-red-500 text-sm" style={{ backgroundColor: 'var(--bg-page)' }}>{error}</div>
   }
 
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: '#F6FAF7' }}>
+    <div className="flex min-h-screen" style={{ backgroundColor: 'var(--bg-page)' }}>
       <Sidebar active="Projects" />
 
-      <main className="ml-60 flex-1 min-h-screen p-8" style={{ backgroundColor: '#F6FAF7' }}>
-        <div className="bg-white border border-gray-200 rounded-lg p-5 mb-6 flex items-center justify-between">
+      <main className="ml-60 flex-1 min-h-screen p-8" style={{ backgroundColor: 'var(--bg-page)' }}>
+        <div className="border rounded-lg p-5 mb-6 flex items-center justify-between" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
           <div>
-            <h1 className="text-lg font-semibold text-gray-800">{project?.title}</h1>
-            <p className="text-sm text-gray-500">{project?.description}</p>
+            <h1 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{project?.title}</h1>
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{project?.description}</p>
           </div>
           {myRole === 'owner' && (
             <div className="flex items-center gap-2">
-              <button onClick={openAddStudentModal} className="border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50">
+              <button onClick={openAddStudentModal} className="border px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50" style={{ borderColor: 'var(--border-card)', color: 'var(--text-primary)' }}>
                 + Add Student
               </button>
               <button onClick={() => setShowModal(true)} className="text-white px-4 py-2 rounded-lg text-sm font-medium" style={{ backgroundColor: '#0D631B' }}>
@@ -256,21 +256,23 @@ export default function ProjectPage() {
         </div>
 
         {/* Filters */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 flex flex-wrap items-center gap-3">
+        <div className="border rounded-lg p-4 mb-6 flex flex-wrap items-center gap-3" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
           <div className="relative flex-1 min-w-[200px]">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search tasks..."
-              className="w-full border border-gray-200 rounded-lg pl-8 pr-3 py-2 text-sm focus:outline-none focus:border-green-500"
+              className="w-full border rounded-lg pl-8 pr-3 py-2 text-sm focus:outline-none focus:border-green-500"
+              style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
             />
           </div>
           <select
             value={filterAssignee}
             onChange={(e) => setFilterAssignee(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-green-500"
+            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+            style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
           >
             <option value="">All students</option>
             {students.map((s) => (
@@ -280,7 +282,8 @@ export default function ProjectPage() {
           <select
             value={filterPriority}
             onChange={(e) => setFilterPriority(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-green-500"
+            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+            style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
           >
             <option value="">All priorities</option>
             <option value="high">High</option>
@@ -298,8 +301,8 @@ export default function ProjectPage() {
             {Object.entries(columns).map(([key, label]) => (
               <div key={key}>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-gray-600">{label}</span>
-                  <span className="text-xs bg-white border border-gray-200 rounded-full px-2 py-0.5 text-gray-500">{grouped[key].length}</span>
+                  <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</span>
+                  <span className="text-xs border rounded-full px-2 py-0.5" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)', color: 'var(--text-secondary)' }}>{grouped[key].length}</span>
                 </div>
                 <Droppable droppableId={key}>
                   {(provided) => (
@@ -312,7 +315,8 @@ export default function ProjectPage() {
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                               onClick={() => myRole === 'owner' && openEditModal(task)}
-                              className={`bg-white border border-gray-200 rounded-lg p-3 mb-2.5 ${myRole === 'owner' ? 'cursor-pointer hover:border-green-300' : ''}`}
+                              className={`border rounded-lg p-3 mb-2.5 ${myRole === 'owner' ? 'cursor-pointer hover:border-green-300' : ''}`}
+                              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}
                             >
                               <div className="flex items-center justify-between mb-2">
                                 <span
@@ -334,9 +338,9 @@ export default function ProjectPage() {
                                   </span>
                                 )}
                               </div>
-                              <p className="text-sm font-medium text-gray-800 mb-2">{task.title}</p>
+                              <p className="text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>{task.title}</p>
                               {task.deadline && (
-                                <span className="text-xs text-gray-400 flex items-center gap-1">
+                                <span className="text-xs flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
                                   <Calendar size={12} />
                                   {new Date(task.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                 </span>
@@ -347,7 +351,7 @@ export default function ProjectPage() {
                       ))}
                       {provided.placeholder}
                       {grouped[key].length === 0 && (
-                        <p className="text-xs text-gray-400 px-1">No tasks.</p>
+                        <p className="text-xs px-1" style={{ color: 'var(--text-muted)' }}>No tasks.</p>
                       )}
                     </div>
                   )}
@@ -360,7 +364,7 @@ export default function ProjectPage() {
         {/* Files section — общая папка проекта. Загружает только mentor/admin, скачивают все участники. */}
         <div className="mt-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-800">Files</h2>
+            <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Files</h2>
             {myRole === 'owner' && (
               <button
                 onClick={() => setShowFileModal(true)}
@@ -372,20 +376,20 @@ export default function ProjectPage() {
             )}
           </div>
           {files.length === 0 ? (
-            <p className="text-sm text-gray-400">No files uploaded yet.</p>
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No files uploaded yet.</p>
           ) : (
             <div className="grid grid-cols-3 gap-3">
               {files.map((file) => (
-                <div key={file.id} className="bg-white border border-gray-200 rounded-lg p-4 flex items-center gap-3">
-                  <File size={20} className="text-gray-400" />
+                <div key={file.id} className="border rounded-lg p-4 flex items-center gap-3" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
+                  <File size={20} style={{ color: 'var(--text-muted)' }} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-800 truncate">{file.file_name}</p>
+                    <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{file.file_name}</p>
                   </div>
                   <a href={file.file_url} target="_blank" rel="noreferrer" className="text-xs hover:underline" style={{ color: '#0D631B' }}>
                     Download
                   </a>
                   {myRole === 'owner' && (
-                    <button onClick={() => handleDeleteFile(file.id)} className="text-gray-400 hover:text-red-500 transition">
+                    <button onClick={() => handleDeleteFile(file.id)} className="hover:text-red-500 transition" style={{ color: 'var(--text-muted)' }}>
                       <Trash2 size={14} />
                     </button>
                   )}
@@ -399,25 +403,27 @@ export default function ProjectPage() {
       {/* Add Task Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">New Task</h2>
+          <div className="rounded-xl p-6 w-full max-w-md shadow-lg" style={{ backgroundColor: 'var(--bg-card)' }}>
+            <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>New Task</h2>
             <div className="flex flex-col gap-3">
               <div>
-                <label className="text-sm text-gray-600 mb-1 block">Title</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Title</label>
                 <input
                   type="text"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   placeholder="Task title"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
                 />
               </div>
               <div>
-                <label className="text-sm text-gray-600 mb-1 block">Priority</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Priority</label>
                 <select
                   value={newPriority}
                   onChange={(e) => setNewPriority(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
@@ -425,11 +431,12 @@ export default function ProjectPage() {
                 </select>
               </div>
               <div>
-                <label className="text-sm text-gray-600 mb-1 block">Assignee</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Assignee</label>
                 <select
                   value={newAssigneeId}
                   onChange={(e) => setNewAssigneeId(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
                 >
                   <option value="">Unassigned</option>
                   {students.map((s) => (
@@ -438,17 +445,18 @@ export default function ProjectPage() {
                 </select>
               </div>
               <div>
-                <label className="text-sm text-gray-600 mb-1 block">Deadline</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Deadline</label>
                 <input
                   type="date"
                   value={newDeadline}
                   onChange={(e) => setNewDeadline(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
                 />
               </div>
             </div>
             <div className="flex gap-3 mt-5">
-              <button onClick={() => setShowModal(false)} className="flex-1 border border-gray-200 rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50 transition">
+              <button onClick={() => setShowModal(false)} className="flex-1 border rounded-lg py-2 text-sm hover:bg-gray-50 transition" style={{ borderColor: 'var(--border-card)', color: 'var(--text-secondary)' }}>
                 Cancel
               </button>
               <button onClick={handleCreateTask} className="flex-1 text-white rounded-lg py-2 text-sm font-medium" style={{ backgroundColor: '#0D631B' }}>
@@ -462,22 +470,24 @@ export default function ProjectPage() {
       {/* Upload File Modal */}
       {showFileModal && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Upload File</h2>
+          <div className="rounded-xl p-6 w-full max-w-md shadow-lg" style={{ backgroundColor: 'var(--bg-card)' }}>
+            <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Upload File</h2>
             <div className="flex flex-col gap-3">
               <div>
-                <label className="text-sm text-gray-600 mb-1 block">File</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>File</label>
                 <input
                   type="file"
                   onChange={(e) => setSelectedFile(e.target.files[0])}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                  style={{ borderColor: 'var(--border-card)', color: 'var(--text-primary)' }}
                 />
               </div>
             </div>
             <div className="flex gap-3 mt-5">
               <button
                 onClick={() => setShowFileModal(false)}
-                className="flex-1 border border-gray-200 rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50 transition"
+                className="flex-1 border rounded-lg py-2 text-sm hover:bg-gray-50 transition"
+                style={{ borderColor: 'var(--border-card)', color: 'var(--text-secondary)' }}
               >
                 Cancel
               </button>
@@ -496,24 +506,26 @@ export default function ProjectPage() {
       {/* Edit Task Modal */}
       {showEditModal && editingTask && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Edit Task</h2>
+          <div className="rounded-xl p-6 w-full max-w-md shadow-lg" style={{ backgroundColor: 'var(--bg-card)' }}>
+            <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Edit Task</h2>
             <div className="flex flex-col gap-3">
               <div>
-                <label className="text-sm text-gray-600 mb-1 block">Title</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Title</label>
                 <input
                   type="text"
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
                 />
               </div>
               <div>
-                <label className="text-sm text-gray-600 mb-1 block">Priority</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Priority</label>
                 <select
                   value={editPriority}
                   onChange={(e) => setEditPriority(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
@@ -521,11 +533,12 @@ export default function ProjectPage() {
                 </select>
               </div>
               <div>
-                <label className="text-sm text-gray-600 mb-1 block">Assignee</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Assignee</label>
                 <select
                   value={editAssigneeId}
                   onChange={(e) => setEditAssigneeId(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
                 >
                   <option value="">Unassigned</option>
                   {students.map((s) => (
@@ -534,17 +547,18 @@ export default function ProjectPage() {
                 </select>
               </div>
               <div>
-                <label className="text-sm text-gray-600 mb-1 block">Deadline</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Deadline</label>
                 <input
                   type="date"
                   value={editDeadline}
                   onChange={(e) => setEditDeadline(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
                 />
               </div>
             </div>
             <div className="flex gap-3 mt-5">
-              <button onClick={() => setShowEditModal(false)} className="flex-1 border border-gray-200 rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50 transition">
+              <button onClick={() => setShowEditModal(false)} className="flex-1 border rounded-lg py-2 text-sm hover:bg-gray-50 transition" style={{ borderColor: 'var(--border-card)', color: 'var(--text-secondary)' }}>
                 Cancel
               </button>
               <button onClick={handleUpdateTask} className="flex-1 text-white rounded-lg py-2 text-sm font-medium" style={{ backgroundColor: '#0D631B' }}>
@@ -558,19 +572,20 @@ export default function ProjectPage() {
       {/* Add Student Modal */}
       {showAddStudentModal && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Add Student to Project</h2>
+          <div className="rounded-xl p-6 w-full max-w-md shadow-lg" style={{ backgroundColor: 'var(--bg-card)' }}>
+            <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Add Student to Project</h2>
             {availableStudents.length === 0 ? (
-              <p className="text-sm text-gray-500">
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                 No students available to add — either everyone is already in this project, or no student accounts exist yet.
               </p>
             ) : (
               <div>
-                <label className="text-sm text-gray-600 mb-1 block">Student</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Student</label>
                 <select
                   value={selectedStudentId}
                   onChange={(e) => setSelectedStudentId(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                  style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
                 >
                   <option value="">Select a student</option>
                   {availableStudents.map((s) => (
@@ -580,7 +595,7 @@ export default function ProjectPage() {
               </div>
             )}
             <div className="flex gap-3 mt-5">
-              <button onClick={() => setShowAddStudentModal(false)} className="flex-1 border border-gray-200 rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50 transition">
+              <button onClick={() => setShowAddStudentModal(false)} className="flex-1 border rounded-lg py-2 text-sm hover:bg-gray-50 transition" style={{ borderColor: 'var(--border-card)', color: 'var(--text-secondary)' }}>
                 Cancel
               </button>
               <button

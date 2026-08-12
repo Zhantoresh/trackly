@@ -52,7 +52,6 @@ export default function TasksPage() {
     }
   }
 
-  // список исполнителей строим из самих задач — не нужен отдельный эндпоинт
   const assignees = useMemo(() => {
     const map = new Map()
     for (const t of tasks) {
@@ -96,7 +95,6 @@ export default function TasksPage() {
     try {
       await api.put(`/api/projects/${task.project_id}/tasks/${task.id}`, { status: newStatus })
     } catch (err) {
-      // например student тащит чужую задачу или не может её менять — откатываем
       setTasks(prevTasks)
       alert(err.response?.data?.detail || 'Could not update task status.')
     }
@@ -112,28 +110,30 @@ export default function TasksPage() {
   const hasFilters = filterProject || filterAssignee || filterPriority || search
 
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: '#F6FAF7' }}>
+    <div className="flex min-h-screen" style={{ backgroundColor: 'var(--bg-page)' }}>
       <Sidebar active="Tasks" />
 
-      <main className="ml-60 flex-1 min-h-screen p-8" style={{ backgroundColor: '#F6FAF7' }}>
-        <h1 className="text-2xl font-semibold text-gray-800 mb-6">Tasks</h1>
+      <main className="ml-60 flex-1 min-h-screen p-8" style={{ backgroundColor: 'var(--bg-page)' }}>
+        <h1 className="text-2xl font-semibold mb-6" style={{ color: 'var(--text-primary)' }}>Tasks</h1>
 
         {/* Filters */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 flex flex-wrap items-center gap-3">
+        <div className="border rounded-lg p-4 mb-6 flex flex-wrap items-center gap-3" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
           <div className="relative flex-1 min-w-[200px]">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search tasks..."
-              className="w-full border border-gray-200 rounded-lg pl-8 pr-3 py-2 text-sm focus:outline-none focus:border-green-500"
+              className="w-full border rounded-lg pl-8 pr-3 py-2 text-sm focus:outline-none focus:border-green-500"
+              style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
             />
           </div>
           <select
             value={filterProject}
             onChange={(e) => setFilterProject(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-green-500"
+            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+            style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
           >
             <option value="">All projects</option>
             {projects.map((p) => (
@@ -143,7 +143,8 @@ export default function TasksPage() {
           <select
             value={filterAssignee}
             onChange={(e) => setFilterAssignee(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-green-500"
+            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+            style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
           >
             <option value="">All students</option>
             {assignees.map((a) => (
@@ -153,7 +154,8 @@ export default function TasksPage() {
           <select
             value={filterPriority}
             onChange={(e) => setFilterPriority(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-green-500"
+            className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+            style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
           >
             <option value="">All priorities</option>
             <option value="high">High</option>
@@ -167,7 +169,7 @@ export default function TasksPage() {
           )}
         </div>
 
-        {loading && <p className="text-sm text-gray-500">Loading tasks...</p>}
+        {loading && <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading tasks...</p>}
         {error && <p className="text-sm text-red-500">{error}</p>}
 
         {!loading && !error && (
@@ -176,8 +178,8 @@ export default function TasksPage() {
               {Object.entries(columns).map(([key, label]) => (
                 <div key={key}>
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-medium text-gray-600">{label}</span>
-                    <span className="text-xs bg-white border border-gray-200 rounded-full px-2 py-0.5 text-gray-500">{grouped[key].length}</span>
+                    <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</span>
+                    <span className="text-xs border rounded-full px-2 py-0.5" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)', color: 'var(--text-secondary)' }}>{grouped[key].length}</span>
                   </div>
                   <Droppable droppableId={key}>
                     {(provided) => (
@@ -190,7 +192,8 @@ export default function TasksPage() {
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
                                 onClick={() => navigate(`/project/${task.project_id}`)}
-                                className="bg-white border border-gray-200 rounded-lg p-3 mb-2.5 cursor-pointer hover:border-green-300 transition"
+                                className="border rounded-lg p-3 mb-2.5 cursor-pointer hover:border-green-300 transition"
+                                style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}
                               >
                                 <div className="flex items-center justify-between mb-2">
                                   <span
@@ -209,10 +212,10 @@ export default function TasksPage() {
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-sm font-medium text-gray-800 mb-1.5">{task.title}</p>
-                                <p className="text-xs text-gray-400 mb-1.5 truncate">{task.project_title}</p>
+                                <p className="text-sm font-medium mb-1.5" style={{ color: 'var(--text-primary)' }}>{task.title}</p>
+                                <p className="text-xs mb-1.5 truncate" style={{ color: 'var(--text-muted)' }}>{task.project_title}</p>
                                 {task.deadline && (
-                                  <span className="text-xs text-gray-400 flex items-center gap-1">
+                                  <span className="text-xs flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
                                     <Calendar size={12} />
                                     {new Date(task.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                   </span>
@@ -223,7 +226,7 @@ export default function TasksPage() {
                         ))}
                         {provided.placeholder}
                         {grouped[key].length === 0 && (
-                          <p className="text-xs text-gray-400 px-1">No tasks.</p>
+                          <p className="text-xs px-1" style={{ color: 'var(--text-muted)' }}>No tasks.</p>
                         )}
                       </div>
                     )}

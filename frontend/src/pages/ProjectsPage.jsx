@@ -17,16 +17,16 @@ export default function ProjectsPage() {
   }, [])
 
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: '#F6FAF7' }}>
+    <div className="flex min-h-screen" style={{ backgroundColor: 'var(--bg-page)' }}>
       <Sidebar active="Projects" />
 
-      <main className="ml-60 flex-1 min-h-screen p-8" style={{ backgroundColor: '#F6FAF7' }}>
-        <h1 className="text-2xl font-semibold text-gray-800 mb-8">Projects</h1>
+      <main className="ml-60 flex-1 min-h-screen p-8" style={{ backgroundColor: 'var(--bg-page)' }}>
+        <h1 className="text-2xl font-semibold mb-8" style={{ color: 'var(--text-primary)' }}>Projects</h1>
 
-        {loading && <p className="text-sm text-gray-500">Loading...</p>}
+        {loading && <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading...</p>}
         {error && <p className="text-sm text-red-500">{error}</p>}
         {!loading && !error && projects.length === 0 && (
-          <p className="text-sm text-gray-500">No projects yet. Create one from the Dashboard.</p>
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>No projects yet. Create one from the Dashboard.</p>
         )}
 
         <div className="grid grid-cols-2 gap-4">
@@ -34,10 +34,11 @@ export default function ProjectsPage() {
             <div
               key={project.id}
               onClick={() => navigate(`/project/${project.id}`)}
-              className="bg-white border border-gray-200 rounded-lg p-5 cursor-pointer hover:border-green-300 transition"
+              className="border rounded-lg p-5 cursor-pointer hover:border-green-300 transition"
+              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}
             >
-              <h3 className="text-sm font-semibold text-gray-800 mb-1">{project.title}</h3>
-              <p className="text-sm text-gray-500">{project.description || 'No description'}</p>
+              <h3 className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>{project.title}</h3>
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{project.description || 'No description'}</p>
             </div>
           ))}
         </div>
