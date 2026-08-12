@@ -1,3 +1,27 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --bg-page: #F6FAF7;
+  --bg-card: #FFFFFF;
+  --border-card: #E5E7EB;
+  --text-primary: #1F2937;
+  --text-secondary: #4B5563;
+  --text-muted: #9CA3AF;
+}
+
+html.dark {
+  --bg-page: #0F1512;
+  --bg-card: #17201C;
+  --border-card: #26332C;
+  --text-primary: #E8EDEA;
+  --text-secondary: #A3B0AA;
+  --text-muted: #6B7A72;
+}
+
+body {
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  transition: background-color 0.2s, color 0.2s;
+}
