@@ -1,43 +1,54 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import { useNavigate, useParams } from 'react-router-dom'
-import { LayoutDashboard, FolderOpen, CheckSquare, File, Users, Settings, HelpCircle, LogOut, Calendar } from 'lucide-react'
+import { File, Calendar, Trash2, Search } from 'lucide-react'
 import api from '../services/api'
-
-const navItems = [
-  { name: 'Dashboard', icon: <LayoutDashboard size={16} /> },
-  { name: 'Projects', icon: <FolderOpen size={16} /> },
-  { name: 'Tasks', icon: <CheckSquare size={16} /> },
-  { name: 'Files', icon: <File size={16} /> },
-  { name: 'Team', icon: <Users size={16} /> },
-  { name: 'Settings', icon: <Settings size={16} /> },
-]
-
-const routeFor = (name) => ({
-  Dashboard: '/dashboard', Projects: '/projects', Tasks: '/tasks',
-  Files: '/files', Team: '/team', Settings: '/settings',
-}[name])
+import Sidebar from '../components/Sidebar'
 
 const columns = { todo: 'To Do', in_progress: 'In Progress', done: 'Done' }
 
 const priorityBg = { high: '#FAECE7', medium: '#FAEEDA', low: '#EAF3DE' }
 const priorityText = { high: '#993C1D', medium: '#854F0B', low: '#3B6D11' }
+const avatarPalette = [
+  { bg: '#E1F5EE', text: '#0F6E56' },
+  { bg: '#FAEEDA', text: '#854F0B' },
+  { bg: '#FAECE7', text: '#993C1D' },
+  { bg: '#EEEDFE', text: '#3C3489' },
+  { bg: '#E6F1FB', text: '#185FA5' },
+]
+
+const initials = (name) => (name || '?').split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()
+const avatarColor = (name) => avatarPalette[(name || '').charCodeAt(0) % avatarPalette.length || 0]
 
 export default function ProjectPage() {
   const { id: projectId } = useParams()
   const navigate = useNavigate()
 
   const [project, setProject] = useState(null)
-  const [tasks, setTasks] = useState({ todo: [], in_progress: [], done: [] })
+  const [tasks, setTasks] = useState([])
+  const [members, setMembers] = useState([])
   const [files, setFiles] = useState([])
+  const [myRole, setMyRole] = useState('member') // 'owner' = mentor/admin для этого проекта
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [showFileModal, setShowFileModal] = useState(false)
+  const [showAddStudentModal, setShowAddStudentModal] = useState(false)
+  const [availableStudents, setAvailableStudents] = useState([])
+  const [selectedStudentId, setSelectedStudentId] = useState('')
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingTask, setEditingTask] = useState(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editPriority, setEditPriority] = useState('medium')
+  const [editAssigneeId, setEditAssigneeId] = useState('')
   const [newTitle, setNewTitle] = useState('')
   const [newPriority, setNewPriority] = useState('medium')
-  const [selectedTaskId, setSelectedTaskId] = useState('')
+  const [newAssigneeId, setNewAssigneeId] = useState('')
   const [selectedFile, setSelectedFile] = useState(null)
+
+  const [filterAssignee, setFilterAssignee] = useState('')
+  const [filterPriority, setFilterPriority] = useState('')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     loadData()
@@ -45,28 +56,27 @@ export default function ProjectPage() {
 
   const loadFiles = async () => {
     try {
-      const res = await api.get(`/api/projects/files/project/${projectId}`)
-      console.log('Files:', res.data)
+      const res = await api.get(`/api/projects/${projectId}/files`)
       setFiles(res.data)
-    }   catch (err) {
+    } catch (err) {
       console.error('Could not load files')
+    }
   }
-}
 
   const loadData = async () => {
     setLoading(true)
     setError('')
     try {
-      const [projectRes, tasksRes] = await Promise.all([
+      const [projectRes, tasksRes, roleRes, membersRes] = await Promise.all([
         api.get(`/api/projects/${projectId}`),
         api.get(`/api/projects/${projectId}/tasks`),
+        api.get(`/api/projects/${projectId}/my-role`),
+        api.get(`/api/projects/${projectId}/members`),
       ])
       setProject(projectRes.data)
-      const grouped = { todo: [], in_progress: [], done: [] }
-      for (const task of tasksRes.data) {
-        grouped[task.status]?.push(task)
-      }
-      setTasks(grouped)
+      setMyRole(roleRes.data.role)
+      setTasks(tasksRes.data)
+      setMembers(membersRes.data)
       await loadFiles()
     } catch (err) {
       setError('Could not load this project.')
@@ -75,60 +85,136 @@ export default function ProjectPage() {
     }
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    navigate('/login')
-  }
+  // id -> имя, чтобы показать аватарку исполнителя на карточке (задачи хранят только assignee_id)
+  const memberName = useMemo(() => {
+    const map = new Map()
+    for (const m of members) map.set(m.user_id, m.name)
+    return map
+  }, [members])
+
+  const students = members.filter((m) => m.role === 'member')
+
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((t) => {
+      if (filterAssignee && t.assignee_id !== filterAssignee) return false
+      if (filterPriority && t.priority !== filterPriority) return false
+      if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false
+      return true
+    })
+  }, [tasks, filterAssignee, filterPriority, search])
+
+  const grouped = useMemo(() => {
+    const g = { todo: [], in_progress: [], done: [] }
+    for (const t of filteredTasks) g[t.status]?.push(t)
+    return g
+  }, [filteredTasks])
+
+  const hasFilters = filterAssignee || filterPriority || search
+  const clearFilters = () => { setFilterAssignee(''); setFilterPriority(''); setSearch('') }
 
   const onDragEnd = async (result) => {
-    const { source, destination } = result
+    const { source, destination, draggableId } = result
     if (!destination) return
-    if (source.droppableId === destination.droppableId && source.index === destination.index) return
+    if (source.droppableId === destination.droppableId) return
 
-    const sourceCol = [...tasks[source.droppableId]]
-    const destCol = source.droppableId === destination.droppableId ? sourceCol : [...tasks[destination.droppableId]]
-    const [moved] = sourceCol.splice(source.index, 1)
-    destCol.splice(destination.index, 0, moved)
+    const newStatus = destination.droppableId
+    const prevTasks = tasks
+    setTasks(tasks.map((t) => (t.id === draggableId ? { ...t, status: newStatus } : t)))
 
-    const newTasks = { ...tasks, [source.droppableId]: sourceCol, [destination.droppableId]: destCol }
-    setTasks(newTasks)
-
-    if (source.droppableId !== destination.droppableId) {
-      try {
-        await api.put(`/api/projects/${projectId}/tasks/${moved.id}`, { status: destination.droppableId })
-      } catch (err) {
-        loadData()
-      }
+    try {
+      await api.put(`/api/projects/${projectId}/tasks/${draggableId}`, { status: newStatus })
+    } catch (err) {
+      setTasks(prevTasks)
+      alert(err.response?.data?.detail || 'Could not update task status.')
     }
   }
 
   const handleCreateTask = async () => {
     if (!newTitle.trim()) return
     try {
-      const res = await api.post(`/api/projects/${projectId}/tasks`, { title: newTitle, priority: newPriority })
-      setTasks({ ...tasks, todo: [...tasks.todo, res.data] })
+      const res = await api.post(`/api/projects/${projectId}/tasks`, {
+        title: newTitle,
+        priority: newPriority,
+        assignee_id: newAssigneeId || null,
+      })
+      setTasks([...tasks, res.data])
       setShowModal(false)
       setNewTitle('')
       setNewPriority('medium')
+      setNewAssigneeId('')
     } catch (err) {
-      alert('Could not create task.')
+      alert(err.response?.data?.detail || 'Could not create task.')
     }
   }
+  const openEditModal = (task) => {
+    setEditingTask(task)
+    setEditTitle(task.title)
+    setEditPriority(task.priority)
+    setEditAssigneeId(task.assignee_id || '')
+    setShowEditModal(true)
+  }
 
+  const handleUpdateTask = async () => {
+    if (!editTitle.trim() || !editingTask) return
+    try {
+      const res = await api.put(`/api/projects/${projectId}/tasks/${editingTask.id}`, {
+        title: editTitle,
+        priority: editPriority,
+        assignee_id: editAssigneeId || null,
+      })
+      setTasks(tasks.map((t) => (t.id === editingTask.id ? res.data : t)))
+      setShowEditModal(false)
+      setEditingTask(null)
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Could not update task.')
+    }
+  }
   const handleFileUpload = async () => {
-    if (!selectedTaskId || !selectedFile) return
+    if (!selectedFile) return
     const formData = new FormData()
     formData.append('file', selectedFile)
     try {
-      await api.post(`/api/projects/${projectId}/tasks/${selectedTaskId}/files`, formData, {
+      await api.post(`/api/projects/${projectId}/files`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
       setShowFileModal(false)
-      setSelectedTaskId('')
       setSelectedFile(null)
       loadFiles()
     } catch (err) {
-      alert('Could not upload file.')
+      alert(err.response?.data?.detail || 'Could not upload file.')
+    }
+  }
+
+  const handleDeleteFile = async (fileId) => {
+    if (!confirm('Delete this file?')) return
+    try {
+      await api.delete(`/api/projects/${projectId}/files/${fileId}`)
+      setFiles(files.filter((f) => f.id !== fileId))
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Could not delete file.')
+    }
+  }
+
+  const openAddStudentModal = async () => {
+    try {
+      const res = await api.get(`/api/projects/${projectId}/available-students`)
+      setAvailableStudents(res.data)
+      setSelectedStudentId('')
+      setShowAddStudentModal(true)
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Could not load students.')
+    }
+  }
+
+  const handleAddStudent = async () => {
+    if (!selectedStudentId) return
+    try {
+      await api.post(`/api/projects/${projectId}/members`, { user_id: selectedStudentId })
+      setShowAddStudentModal(false)
+      setSelectedStudentId('')
+      loadData()
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Could not add student.')
     }
   }
 
@@ -142,42 +228,7 @@ export default function ProjectPage() {
 
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: '#F6FAF7' }}>
-      <aside className="w-60 bg-white border-r border-gray-200 flex flex-col py-6 px-4 fixed h-full">
-        <div className="flex items-center gap-2 mb-8 px-2">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#0D631B' }}>
-            <div className="grid grid-cols-2 gap-0.5 p-1.5">
-              <div className="bg-white rounded-sm w-2.5 h-2.5"></div>
-              <div className="bg-white rounded-sm w-2.5 h-2.5"></div>
-              <div className="bg-white rounded-sm w-2.5 h-2.5"></div>
-              <div className="bg-white rounded-sm w-2.5 h-2.5"></div>
-            </div>
-          </div>
-          <span className="font-semibold text-lg" style={{ color: '#0D631B' }}>Trackly</span>
-        </div>
-        <nav className="flex flex-col gap-1 flex-1">
-          {navItems.map((item) => (
-            <button
-              key={item.name}
-              onClick={() => navigate(routeFor(item.name))}
-              className={`text-left px-3 py-2 text-sm font-medium transition flex items-center gap-3 ${
-                item.name === 'Projects' ? 'border-l-4 rounded-r-lg' : 'border-l-4 border-transparent rounded-lg hover:bg-gray-100 text-gray-600'
-              }`}
-              style={item.name === 'Projects' ? { backgroundColor: '#D9E6DA', borderColor: '#0D631B', color: '#0D631B' } : {}}
-            >
-              {item.icon}
-              {item.name}
-            </button>
-          ))}
-        </nav>
-        <div className="border-t border-gray-200 pt-4 flex flex-col gap-1">
-          <button className="text-left px-3 py-2 text-sm text-gray-500 hover:bg-gray-100 rounded-lg flex items-center gap-3">
-            <HelpCircle size={16} /> Support
-          </button>
-          <button onClick={handleLogout} className="text-left px-3 py-2 text-sm text-gray-500 hover:text-red-500 transition flex items-center gap-3 rounded-lg">
-            <LogOut size={16} /> Sign Out
-          </button>
-        </div>
-      </aside>
+      <Sidebar active="Projects" />
 
       <main className="ml-60 flex-1 min-h-screen p-8" style={{ backgroundColor: '#F6FAF7' }}>
         <div className="bg-white border border-gray-200 rounded-lg p-5 mb-6 flex items-center justify-between">
@@ -185,37 +236,97 @@ export default function ProjectPage() {
             <h1 className="text-lg font-semibold text-gray-800">{project?.title}</h1>
             <p className="text-sm text-gray-500">{project?.description}</p>
           </div>
-          <button onClick={() => setShowModal(true)} className="text-white px-4 py-2 rounded-lg text-sm font-medium" style={{ backgroundColor: '#0D631B' }}>
-            + Add Task
-          </button>
+          {myRole === 'owner' && (
+            <div className="flex items-center gap-2">
+              <button onClick={openAddStudentModal} className="border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50">
+                + Add Student
+              </button>
+              <button onClick={() => setShowModal(true)} className="text-white px-4 py-2 rounded-lg text-sm font-medium" style={{ backgroundColor: '#0D631B' }}>
+                + Add Task
+              </button>
+            </div>
+          )}
         </div>
 
+        {/* Filters */}
+        <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search tasks..."
+              className="w-full border border-gray-200 rounded-lg pl-8 pr-3 py-2 text-sm focus:outline-none focus:border-green-500"
+            />
+          </div>
+          <select
+            value={filterAssignee}
+            onChange={(e) => setFilterAssignee(e.target.value)}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-green-500"
+          >
+            <option value="">All students</option>
+            {students.map((s) => (
+              <option key={s.user_id} value={s.user_id}>{s.name}</option>
+            ))}
+          </select>
+          <select
+            value={filterPriority}
+            onChange={(e) => setFilterPriority(e.target.value)}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-green-500"
+          >
+            <option value="">All priorities</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+          {hasFilters && (
+            <button onClick={clearFilters} className="text-sm hover:underline" style={{ color: '#0D631B' }}>
+              Clear filters
+            </button>
+          )}
+        </div>
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="grid grid-cols-3 gap-4">
             {Object.entries(columns).map(([key, label]) => (
               <div key={key}>
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm font-medium text-gray-600">{label}</span>
-                  <span className="text-xs bg-white border border-gray-200 rounded-full px-2 py-0.5 text-gray-500">{tasks[key].length}</span>
+                  <span className="text-xs bg-white border border-gray-200 rounded-full px-2 py-0.5 text-gray-500">{grouped[key].length}</span>
                 </div>
                 <Droppable droppableId={key}>
                   {(provided) => (
                     <div ref={provided.innerRef} {...provided.droppableProps} className="min-h-[40px]">
-                      {tasks[key].map((task, index) => (
+                      {grouped[key].map((task, index) => (
                         <Draggable key={task.id} draggableId={task.id} index={index}>
                           {(provided) => (
                             <div
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
-                              className="bg-white border border-gray-200 rounded-lg p-3 mb-2.5"
+                              onClick={() => myRole === 'owner' && openEditModal(task)}
+                              className={`bg-white border border-gray-200 rounded-lg p-3 mb-2.5 ${myRole === 'owner' ? 'cursor-pointer hover:border-green-300' : ''}`}
                             >
-                              <span
-                                className="text-xs px-2 py-1 font-medium rounded inline-block mb-2"
-                                style={{ backgroundColor: priorityBg[task.priority], color: priorityText[task.priority] }}
-                              >
-                                {task.priority}
-                              </span>
+                              <div className="flex items-center justify-between mb-2">
+                                <span
+                                  className="text-xs px-2 py-1 font-medium rounded inline-block"
+                                  style={{ backgroundColor: priorityBg[task.priority], color: priorityText[task.priority] }}
+                                >
+                                  {task.priority}
+                                </span>
+                                {task.assignee_id && memberName.get(task.assignee_id) && (
+                                  <span
+                                    title={memberName.get(task.assignee_id)}
+                                    className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold"
+                                    style={{
+                                      backgroundColor: avatarColor(memberName.get(task.assignee_id)).bg,
+                                      color: avatarColor(memberName.get(task.assignee_id)).text,
+                                    }}
+                                  >
+                                    {initials(memberName.get(task.assignee_id))}
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-sm font-medium text-gray-800 mb-2">{task.title}</p>
                               {task.deadline && (
                                 <span className="text-xs text-gray-400 flex items-center gap-1">
@@ -228,6 +339,9 @@ export default function ProjectPage() {
                         </Draggable>
                       ))}
                       {provided.placeholder}
+                      {grouped[key].length === 0 && (
+                        <p className="text-xs text-gray-400 px-1">No tasks.</p>
+                      )}
                     </div>
                   )}
                 </Droppable>
@@ -236,17 +350,19 @@ export default function ProjectPage() {
           </div>
         </DragDropContext>
 
-        {/* Files section */}
+        {/* Files section — общая папка проекта. Загружает только mentor/admin, скачивают все участники. */}
         <div className="mt-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold text-gray-800">Files</h2>
-            <button
-              onClick={() => setShowFileModal(true)}
-              className="text-white px-4 py-2 rounded-lg text-sm font-medium"
-              style={{ backgroundColor: '#0D631B' }}
-            >
-              + Upload File
-            </button>
+            {myRole === 'owner' && (
+              <button
+                onClick={() => setShowFileModal(true)}
+                className="text-white px-4 py-2 rounded-lg text-sm font-medium"
+                style={{ backgroundColor: '#0D631B' }}
+              >
+                + Upload File
+              </button>
+            )}
           </div>
           {files.length === 0 ? (
             <p className="text-sm text-gray-400">No files uploaded yet.</p>
@@ -261,6 +377,11 @@ export default function ProjectPage() {
                   <a href={file.file_url} target="_blank" rel="noreferrer" className="text-xs hover:underline" style={{ color: '#0D631B' }}>
                     Download
                   </a>
+                  {myRole === 'owner' && (
+                    <button onClick={() => handleDeleteFile(file.id)} className="text-gray-400 hover:text-red-500 transition">
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -296,6 +417,19 @@ export default function ProjectPage() {
                   <option value="high">High</option>
                 </select>
               </div>
+              <div>
+                <label className="text-sm text-gray-600 mb-1 block">Assignee</label>
+                <select
+                  value={newAssigneeId}
+                  onChange={(e) => setNewAssigneeId(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                >
+                  <option value="">Unassigned</option>
+                  {students.map((s) => (
+                    <option key={s.user_id} value={s.user_id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="flex gap-3 mt-5">
               <button onClick={() => setShowModal(false)} className="flex-1 border border-gray-200 rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50 transition">
@@ -315,19 +449,6 @@ export default function ProjectPage() {
           <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">Upload File</h2>
             <div className="flex flex-col gap-3">
-              <div>
-                <label className="text-sm text-gray-600 mb-1 block">Select Task</label>
-                <select
-                  value={selectedTaskId}
-                  onChange={(e) => setSelectedTaskId(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
-                >
-                  <option value="">Choose a task...</option>
-                  {[...tasks.todo, ...tasks.in_progress, ...tasks.done].map((task) => (
-                    <option key={task.id} value={task.id}>{task.title}</option>
-                  ))}
-                </select>
-              </div>
               <div>
                 <label className="text-sm text-gray-600 mb-1 block">File</label>
                 <input
@@ -350,6 +471,98 @@ export default function ProjectPage() {
                 style={{ backgroundColor: '#0D631B' }}
               >
                 Upload
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Edit Task Modal */}
+      {showEditModal && editingTask && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">Edit Task</h2>
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="text-sm text-gray-600 mb-1 block">Title</label>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-600 mb-1 block">Priority</label>
+                <select
+                  value={editPriority}
+                  onChange={(e) => setEditPriority(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm text-gray-600 mb-1 block">Assignee</label>
+                <select
+                  value={editAssigneeId}
+                  onChange={(e) => setEditAssigneeId(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                >
+                  <option value="">Unassigned</option>
+                  {students.map((s) => (
+                    <option key={s.user_id} value={s.user_id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-5">
+              <button onClick={() => setShowEditModal(false)} className="flex-1 border border-gray-200 rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50 transition">
+                Cancel
+              </button>
+              <button onClick={handleUpdateTask} className="flex-1 text-white rounded-lg py-2 text-sm font-medium" style={{ backgroundColor: '#0D631B' }}>
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Add Student Modal */}
+      {showAddStudentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">Add Student to Project</h2>
+            {availableStudents.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                No students available to add — either everyone is already in this project, or no student accounts exist yet.
+              </p>
+            ) : (
+              <div>
+                <label className="text-sm text-gray-600 mb-1 block">Student</label>
+                <select
+                  value={selectedStudentId}
+                  onChange={(e) => setSelectedStudentId(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
+                >
+                  <option value="">Select a student</option>
+                  {availableStudents.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name} ({s.email})</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className="flex gap-3 mt-5">
+              <button onClick={() => setShowAddStudentModal(false)} className="flex-1 border border-gray-200 rounded-lg py-2 text-sm text-gray-600 hover:bg-gray-50 transition">
+                Cancel
+              </button>
+              <button
+                onClick={handleAddStudent}
+                disabled={!selectedStudentId}
+                className="flex-1 text-white rounded-lg py-2 text-sm font-medium disabled:opacity-50"
+                style={{ backgroundColor: '#0D631B' }}
+              >
+                Add
               </button>
             </div>
           </div>

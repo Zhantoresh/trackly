@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.user import UserCreate, UserLogin, UserResponse, Token
 from app.config import settings
 from jose import jwt, JWTError
@@ -35,15 +35,21 @@ def get_current_user(authorization: str = Header(...), db: Session = Depends(get
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-@router.post("/register", response_model=Token)
-def register(data: UserCreate, db: Session = Depends(get_db)):
-    if db.query(User).filter(User.email == data.email).first():
-        raise HTTPException(status_code=400, detail="Email already registered")
-    user = User(name=data.name, email=data.email, hashed_password=hash_password(data.password))
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return {"access_token": create_token(str(user.id))}
+
+def require_admin(current_user: User = Depends(get_current_user)) -> User:
+    if current_user.role != UserRole.admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return current_user
+
+
+def require_mentor(current_user: User = Depends(get_current_user)) -> User:
+    if current_user.role not in (UserRole.admin, UserRole.mentor):
+        raise HTTPException(status_code=403, detail="Mentor access required")
+    return current_user
+
+
+# Публичной регистрации больше нет — пользователей создаёт только admin.
+# См. POST /api/admin/users в routers/admin.py (этап 2).
 
 @router.post("/login", response_model=Token)
 def login(data: UserLogin, db: Session = Depends(get_db)):

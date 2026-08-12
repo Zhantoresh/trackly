@@ -5,19 +5,11 @@ from app.models.project import Project, ProjectMember
 from app.models.task import Task, TaskStatus, TaskPriority
 from app.models.user import User
 from app.routers.auth import get_current_user
+from app.permissions import get_project_or_404, require_project_access
 from uuid import UUID
 from datetime import datetime
 
 router = APIRouter(prefix="/api/projects", tags=["stats"])
-
-
-def require_member(project_id: UUID, current_user: User, db: Session):
-    member = db.query(ProjectMember).filter(
-        ProjectMember.project_id == project_id,
-        ProjectMember.user_id == current_user.id
-    ).first()
-    if not member:
-        raise HTTPException(status_code=403, detail="You are not a member of this project")
 
 
 @router.get("/{project_id}/stats")
@@ -26,11 +18,8 @@ def get_project_stats(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    project = db.query(Project).filter(Project.id == project_id).first()
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found")
-
-    require_member(project_id, current_user, db)
+    project = get_project_or_404(project_id, db)
+    require_project_access(project, current_user, db)
 
     tasks = db.query(Task).filter(Task.project_id == project_id).all()
     total = len(tasks)

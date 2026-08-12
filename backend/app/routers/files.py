@@ -1,16 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.task import Task, TaskFile
+from app.models.project import Project
 from app.models.user import User
 from app.routers.auth import get_current_user
+from app.permissions import get_project_or_404, require_project_access
 from app.config import settings
 from pydantic import BaseModel
 from uuid import UUID
 from datetime import datetime
 from typing import Optional
-import httpx
+from pathlib import Path
 import uuid
 import traceback
 
@@ -36,29 +37,23 @@ async def upload_file(
     current_user: User = Depends(get_current_user)
 ):
     try:
+        project = get_project_or_404(project_id, db)
+        require_project_access(project, current_user, db)
+
         task = db.query(Task).filter(Task.id == task_id, Task.project_id == project_id).first()
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
 
         file_content = await file.read()
         file_ext = file.filename.split(".")[-1] if "." in file.filename else ""
-        storage_path = f"{project_id}/{task_id}/{uuid.uuid4()}.{file_ext}"
+        stored_name = f"{uuid.uuid4()}.{file_ext}" if file_ext else str(uuid.uuid4())
+        storage_path = f"{project_id}/{task_id}/{stored_name}"
 
-        print(f"Uploading to Supabase: {storage_path}")
-        print(f"SUPABASE_URL: {settings.SUPABASE_URL}")
+        dest_path = Path(settings.UPLOAD_DIR) / storage_path
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+        dest_path.write_bytes(file_content)
 
-        async with httpx.AsyncClient() as client:
-            upload_url = f"{settings.SUPABASE_URL}/storage/v1/object/files/{storage_path}"
-            headers = {
-                "Authorization": f"Bearer {settings.SUPABASE_SERVICE_KEY}",
-                "Content-Type": file.content_type or "application/octet-stream",
-            }
-            response = await client.post(upload_url, content=file_content, headers=headers)
-            print(f"Supabase response: {response.status_code} {response.text}")
-            if response.status_code not in (200, 201):
-                raise HTTPException(status_code=500, detail=f"Storage error: {response.text}")
-
-        public_url = f"{settings.SUPABASE_URL}/storage/v1/object/public/files/{storage_path}"
+        public_url = f"{settings.PUBLIC_BASE_URL}/files/{storage_path}"
 
         task_file = TaskFile(
             task_id=task_id,
@@ -85,6 +80,8 @@ def get_files(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    project = get_project_or_404(project_id, db)
+    require_project_access(project, current_user, db)
     task = db.query(Task).filter(Task.id == task_id, Task.project_id == project_id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -100,9 +97,21 @@ def delete_file(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    project = get_project_or_404(project_id, db)
+    require_project_access(project, current_user, db)
     task_file = db.query(TaskFile).filter(TaskFile.id == file_id, TaskFile.task_id == task_id).first()
     if not task_file:
         raise HTTPException(status_code=404, detail="File not found")
+
+    # best-effort: remove the file from disk too, DB row is the source of truth either way
+    try:
+        marker = f"/files/{project_id}/{task_id}/"
+        if marker in task_file.file_url:
+            rel_path = task_file.file_url.split("/files/", 1)[1]
+            (Path(settings.UPLOAD_DIR) / rel_path).unlink(missing_ok=True)
+    except Exception:
+        traceback.print_exc()
+
     db.delete(task_file)
     db.commit()
     return {"message": "File deleted"}
@@ -114,6 +123,8 @@ def get_project_files(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    project = get_project_or_404(project_id, db)
+    require_project_access(project, current_user, db)
     tasks = db.query(Task).filter(Task.project_id == project_id).all()
     task_ids = [t.id for t in tasks]
     files = db.query(TaskFile).filter(TaskFile.task_id.in_(task_ids)).all()
