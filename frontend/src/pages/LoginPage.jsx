@@ -21,35 +21,37 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
-      <div className="bg-white p-8 rounded-xl border border-gray-200 w-full max-w-sm">
+    <div className="min-h-screen flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-page)' }}>
+      <div className="p-8 rounded-xl border w-full max-w-sm" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
         <div className="flex items-center gap-2 mb-6">
           <img src="/src/assets/logo.png" alt="Trackly" className="w-7 h-7" />
           <span className="font-semibold text-green-700 text-base">Trackly</span>
         </div>
-        <h1 className="text-2xl font-semibold text-gray-800 mb-1">Welcome back</h1>
-        <p className="text-sm text-gray-500 mb-6">Sign in to your workspace</p>
+        <h1 className="text-2xl font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Welcome back</h1>
+        <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>Sign in to your workspace</p>
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Email</label>
+            <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>Email</label>
             <input
               type="email"
               placeholder="name@company.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600"
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600"
+              style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
               required
             />
           </div>
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Password</label>
+            <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>Password</label>
             <input
               type="password"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600"
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600"
+              style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
               required
             />
           </div>
@@ -61,7 +63,7 @@ export default function LoginPage() {
           </button>
         </form>
       </div>
-      <p className="text-xs text-gray-400 mt-6">© 2026 Trackly.</p>
+      <p className="text-xs mt-6" style={{ color: 'var(--text-muted)' }}>© 2026 Trackly.</p>
     </div>
   )
 }

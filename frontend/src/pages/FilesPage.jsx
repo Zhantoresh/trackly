@@ -10,23 +10,23 @@ const files = [
 ]
 
 const typeIcon = {
-  design: <FileText size={16} className="text-gray-500" />,
-  doc: <FileText size={16} className="text-gray-500" />,
-  image: <Image size={16} className="text-gray-500" />,
+  design: <FileText size={16} style={{ color: 'var(--text-muted)' }} />,
+  doc: <FileText size={16} style={{ color: 'var(--text-muted)' }} />,
+  image: <Image size={16} style={{ color: 'var(--text-muted)' }} />,
 }
 
 export default function FilesPage() {
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: '#F6FAF7' }}>
+    <div className="flex min-h-screen" style={{ backgroundColor: 'var(--bg-page)' }}>
       <Sidebar active="Files" />
 
-      <main className="ml-60 flex-1 min-h-screen p-8" style={{ backgroundColor: '#F6FAF7' }}>
-        <h1 className="text-2xl font-semibold text-gray-800 mb-8">Files</h1>
+      <main className="ml-60 flex-1 min-h-screen p-8" style={{ backgroundColor: 'var(--bg-page)' }}>
+        <h1 className="text-2xl font-semibold mb-8" style={{ color: 'var(--text-primary)' }}>Files</h1>
 
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <div className="border rounded-lg overflow-hidden" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 text-left text-gray-500">
+              <tr className="border-b text-left" style={{ borderColor: 'var(--border-card)', color: 'var(--text-secondary)' }}>
                 <th className="px-5 py-3 font-medium">File</th>
                 <th className="px-5 py-3 font-medium">Project</th>
                 <th className="px-5 py-3 font-medium">Task</th>
@@ -36,16 +36,16 @@ export default function FilesPage() {
             </thead>
             <tbody>
               {files.map((file) => (
-                <tr key={file.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
-                  <td className="px-5 py-3 text-gray-800 font-medium flex items-center gap-2">
+                <tr key={file.id} className="border-b last:border-0 hover:bg-black hover:bg-opacity-5" style={{ borderColor: 'var(--border-card)' }}>
+                  <td className="px-5 py-3 font-medium flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
                     {typeIcon[file.type]}
                     {file.name}
                   </td>
-                  <td className="px-5 py-3 text-gray-500">{file.project}</td>
-                  <td className="px-5 py-3 text-gray-500">{file.task}</td>
-                  <td className="px-5 py-3 text-gray-400">{file.size}</td>
+                  <td className="px-5 py-3" style={{ color: 'var(--text-secondary)' }}>{file.project}</td>
+                  <td className="px-5 py-3" style={{ color: 'var(--text-secondary)' }}>{file.task}</td>
+                  <td className="px-5 py-3" style={{ color: 'var(--text-muted)' }}>{file.size}</td>
                   <td className="px-5 py-3">
-                    <button className="text-gray-400 hover:text-green-700 transition">
+                    <button className="hover:text-green-700 transition" style={{ color: 'var(--text-muted)' }}>
                       <Download size={16} />
                     </button>
                   </td>

@@ -12,21 +12,21 @@ const roleText = { owner: '#0D631B', member: '#5F5E5A' }
 
 export default function TeamPage() {
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: '#F6FAF7' }}>
+    <div className="flex min-h-screen" style={{ backgroundColor: 'var(--bg-page)' }}>
       <Sidebar active="Team" />
 
-      <main className="ml-60 flex-1 min-h-screen p-8" style={{ backgroundColor: '#F6FAF7' }}>
+      <main className="ml-60 flex-1 min-h-screen p-8" style={{ backgroundColor: 'var(--bg-page)' }}>
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-semibold text-gray-800">Team</h1>
+          <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Team</h1>
           <button className="text-white px-4 py-2 rounded-lg text-sm font-medium transition" style={{ backgroundColor: '#0D631B' }}>
             + Invite member
           </button>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <div className="border rounded-lg overflow-hidden" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 text-left text-gray-500">
+              <tr className="border-b text-left" style={{ borderColor: 'var(--border-card)', color: 'var(--text-secondary)' }}>
                 <th className="px-5 py-3 font-medium">Member</th>
                 <th className="px-5 py-3 font-medium">Email</th>
                 <th className="px-5 py-3 font-medium">Role</th>
@@ -34,7 +34,7 @@ export default function TeamPage() {
             </thead>
             <tbody>
               {members.map((m) => (
-                <tr key={m.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                <tr key={m.id} className="border-b last:border-0 hover:bg-black hover:bg-opacity-5" style={{ borderColor: 'var(--border-card)' }}>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-3">
                       <div
@@ -43,10 +43,10 @@ export default function TeamPage() {
                       >
                         {m.initials}
                       </div>
-                      <span className="text-gray-800 font-medium">{m.name}</span>
+                      <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{m.name}</span>
                     </div>
                   </td>
-                  <td className="px-5 py-3 text-gray-500">{m.email}</td>
+                  <td className="px-5 py-3" style={{ color: 'var(--text-secondary)' }}>{m.email}</td>
                   <td className="px-5 py-3">
                     <span
                       className="text-xs px-3 py-1 font-medium rounded"
