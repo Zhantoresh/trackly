@@ -4,8 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { File, Calendar, Trash2, Search } from 'lucide-react'
 import api from '../services/api'
 import Sidebar from '../components/Sidebar'
-
-const columns = { todo: 'To Do', in_progress: 'In Progress', done: 'Done' }
+import { useLanguage } from '../i18n/LanguageContext'
 
 const priorityBg = { high: '#FAECE7', medium: '#FAEEDA', low: '#EAF3DE' }
 const priorityText = { high: '#993C1D', medium: '#854F0B', low: '#3B6D11' }
@@ -23,6 +22,9 @@ const avatarColor = (name) => avatarPalette[(name || '').charCodeAt(0) % avatarP
 export default function ProjectPage() {
   const { id: projectId } = useParams()
   const navigate = useNavigate()
+  const { t } = useLanguage()
+
+  const columns = { todo: t('todo'), in_progress: t('inProgress'), done: t('done') }
 
   const [project, setProject] = useState(null)
   const [tasks, setTasks] = useState([])
@@ -246,16 +248,15 @@ export default function ProjectPage() {
           {myRole === 'owner' && (
             <div className="flex items-center gap-2">
               <button onClick={openAddStudentModal} className="border px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50" style={{ borderColor: 'var(--border-card)', color: 'var(--text-primary)' }}>
-                + Add Student
+                + {t('addStudent')}
               </button>
               <button onClick={() => setShowModal(true)} className="text-white px-4 py-2 rounded-lg text-sm font-medium" style={{ backgroundColor: '#0D631B' }}>
-                + Add Task
+                + {t('addTask')}
               </button>
             </div>
           )}
         </div>
 
-        {/* Filters */}
         <div className="border rounded-lg p-4 mb-6 flex flex-wrap items-center gap-3" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
           <div className="relative flex-1 min-w-[200px]">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
@@ -263,7 +264,7 @@ export default function ProjectPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search tasks..."
+              placeholder={t('searchTasksPlaceholder')}
               className="w-full border rounded-lg pl-8 pr-3 py-2 text-sm focus:outline-none focus:border-green-500"
               style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
             />
@@ -274,7 +275,7 @@ export default function ProjectPage() {
             className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
             style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
           >
-            <option value="">All students</option>
+            <option value="">{t('allStudents')}</option>
             {students.map((s) => (
               <option key={s.user_id} value={s.user_id}>{s.name}</option>
             ))}
@@ -285,14 +286,14 @@ export default function ProjectPage() {
             className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
             style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
           >
-            <option value="">All priorities</option>
-            <option value="high">High</option>
-            <option value="medium">Medium</option>
-            <option value="low">Low</option>
+            <option value="">{t('allPriorities')}</option>
+            <option value="high">{t('high')}</option>
+            <option value="medium">{t('medium')}</option>
+            <option value="low">{t('low')}</option>
           </select>
           {hasFilters && (
             <button onClick={clearFilters} className="text-sm hover:underline" style={{ color: '#0D631B' }}>
-              Clear filters
+              {t('clearFilters')}
             </button>
           )}
         </div>
@@ -323,7 +324,7 @@ export default function ProjectPage() {
                                   className="text-xs px-2 py-1 font-medium rounded inline-block"
                                   style={{ backgroundColor: priorityBg[task.priority], color: priorityText[task.priority] }}
                                 >
-                                  {task.priority}
+                                  {t(task.priority)}
                                 </span>
                                 {task.assignee_id && memberName.get(task.assignee_id) && (
                                   <span
@@ -351,7 +352,7 @@ export default function ProjectPage() {
                       ))}
                       {provided.placeholder}
                       {grouped[key].length === 0 && (
-                        <p className="text-xs px-1" style={{ color: 'var(--text-muted)' }}>No tasks.</p>
+                        <p className="text-xs px-1" style={{ color: 'var(--text-muted)' }}>{t('noTasks')}</p>
                       )}
                     </div>
                   )}
@@ -361,22 +362,21 @@ export default function ProjectPage() {
           </div>
         </DragDropContext>
 
-        {/* Files section — общая папка проекта. Загружает только mentor/admin, скачивают все участники. */}
         <div className="mt-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Files</h2>
+            <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>{t('filesTitle')}</h2>
             {myRole === 'owner' && (
               <button
                 onClick={() => setShowFileModal(true)}
                 className="text-white px-4 py-2 rounded-lg text-sm font-medium"
                 style={{ backgroundColor: '#0D631B' }}
               >
-                + Upload File
+                + {t('uploadFile')}
               </button>
             )}
           </div>
           {files.length === 0 ? (
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No files uploaded yet.</p>
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{t('noFilesUploaded')}</p>
           ) : (
             <div className="grid grid-cols-3 gap-3">
               {files.map((file) => (
@@ -386,7 +386,7 @@ export default function ProjectPage() {
                     <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{file.file_name}</p>
                   </div>
                   <a href={file.file_url} target="_blank" rel="noreferrer" className="text-xs hover:underline" style={{ color: '#0D631B' }}>
-                    Download
+                    {t('download')}
                   </a>
                   {myRole === 'owner' && (
                     <button onClick={() => handleDeleteFile(file.id)} className="hover:text-red-500 transition" style={{ color: 'var(--text-muted)' }}>
@@ -400,14 +400,13 @@ export default function ProjectPage() {
         </div>
       </main>
 
-      {/* Add Task Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
           <div className="rounded-xl p-6 w-full max-w-md shadow-lg" style={{ backgroundColor: 'var(--bg-card)' }}>
-            <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>New Task</h2>
+            <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>{t('newTaskModalTitle')}</h2>
             <div className="flex flex-col gap-3">
               <div>
-                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Title</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>{t('title')}</label>
                 <input
                   type="text"
                   value={newTitle}
@@ -418,34 +417,34 @@ export default function ProjectPage() {
                 />
               </div>
               <div>
-                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Priority</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>{t('priority')}</label>
                 <select
                   value={newPriority}
                   onChange={(e) => setNewPriority(e.target.value)}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
                   style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
                 >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
+                  <option value="low">{t('low')}</option>
+                  <option value="medium">{t('medium')}</option>
+                  <option value="high">{t('high')}</option>
                 </select>
               </div>
               <div>
-                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Assignee</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>{t('assignee')}</label>
                 <select
                   value={newAssigneeId}
                   onChange={(e) => setNewAssigneeId(e.target.value)}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
                   style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
                 >
-                  <option value="">Unassigned</option>
+                  <option value="">{t('unassigned')}</option>
                   {students.map((s) => (
                     <option key={s.user_id} value={s.user_id}>{s.name}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Deadline</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>{t('deadline')}</label>
                 <input
                   type="date"
                   value={newDeadline}
@@ -457,24 +456,23 @@ export default function ProjectPage() {
             </div>
             <div className="flex gap-3 mt-5">
               <button onClick={() => setShowModal(false)} className="flex-1 border rounded-lg py-2 text-sm hover:bg-gray-50 transition" style={{ borderColor: 'var(--border-card)', color: 'var(--text-secondary)' }}>
-                Cancel
+                {t('cancel')}
               </button>
               <button onClick={handleCreateTask} className="flex-1 text-white rounded-lg py-2 text-sm font-medium" style={{ backgroundColor: '#0D631B' }}>
-                Create Task
+                {t('createTask')}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Upload File Modal */}
       {showFileModal && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
           <div className="rounded-xl p-6 w-full max-w-md shadow-lg" style={{ backgroundColor: 'var(--bg-card)' }}>
-            <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Upload File</h2>
+            <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>{t('uploadFileModalTitle')}</h2>
             <div className="flex flex-col gap-3">
               <div>
-                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>File</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>{t('file')}</label>
                 <input
                   type="file"
                   onChange={(e) => setSelectedFile(e.target.files[0])}
@@ -489,28 +487,27 @@ export default function ProjectPage() {
                 className="flex-1 border rounded-lg py-2 text-sm hover:bg-gray-50 transition"
                 style={{ borderColor: 'var(--border-card)', color: 'var(--text-secondary)' }}
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={handleFileUpload}
                 className="flex-1 text-white rounded-lg py-2 text-sm font-medium"
                 style={{ backgroundColor: '#0D631B' }}
               >
-                Upload
+                {t('upload')}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Edit Task Modal */}
       {showEditModal && editingTask && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
           <div className="rounded-xl p-6 w-full max-w-md shadow-lg" style={{ backgroundColor: 'var(--bg-card)' }}>
-            <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Edit Task</h2>
+            <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>{t('editTaskModalTitle')}</h2>
             <div className="flex flex-col gap-3">
               <div>
-                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Title</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>{t('title')}</label>
                 <input
                   type="text"
                   value={editTitle}
@@ -520,34 +517,34 @@ export default function ProjectPage() {
                 />
               </div>
               <div>
-                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Priority</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>{t('priority')}</label>
                 <select
                   value={editPriority}
                   onChange={(e) => setEditPriority(e.target.value)}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
                   style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
                 >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
+                  <option value="low">{t('low')}</option>
+                  <option value="medium">{t('medium')}</option>
+                  <option value="high">{t('high')}</option>
                 </select>
               </div>
               <div>
-                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Assignee</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>{t('assignee')}</label>
                 <select
                   value={editAssigneeId}
                   onChange={(e) => setEditAssigneeId(e.target.value)}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
                   style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
                 >
-                  <option value="">Unassigned</option>
+                  <option value="">{t('unassigned')}</option>
                   {students.map((s) => (
                     <option key={s.user_id} value={s.user_id}>{s.name}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Deadline</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>{t('deadline')}</label>
                 <input
                   type="date"
                   value={editDeadline}
@@ -559,35 +556,34 @@ export default function ProjectPage() {
             </div>
             <div className="flex gap-3 mt-5">
               <button onClick={() => setShowEditModal(false)} className="flex-1 border rounded-lg py-2 text-sm hover:bg-gray-50 transition" style={{ borderColor: 'var(--border-card)', color: 'var(--text-secondary)' }}>
-                Cancel
+                {t('cancel')}
               </button>
               <button onClick={handleUpdateTask} className="flex-1 text-white rounded-lg py-2 text-sm font-medium" style={{ backgroundColor: '#0D631B' }}>
-                Save
+                {t('save')}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Add Student Modal */}
       {showAddStudentModal && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
           <div className="rounded-xl p-6 w-full max-w-md shadow-lg" style={{ backgroundColor: 'var(--bg-card)' }}>
-            <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Add Student to Project</h2>
+            <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>{t('addStudentModalTitle')}</h2>
             {availableStudents.length === 0 ? (
               <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                No students available to add — either everyone is already in this project, or no student accounts exist yet.
+                {t('noStudentsAvailable')}
               </p>
             ) : (
               <div>
-                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Student</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>{t('student')}</label>
                 <select
                   value={selectedStudentId}
                   onChange={(e) => setSelectedStudentId(e.target.value)}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
                   style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
                 >
-                  <option value="">Select a student</option>
+                  <option value="">{t('selectStudent')}</option>
                   {availableStudents.map((s) => (
                     <option key={s.id} value={s.id}>{s.name} ({s.email})</option>
                   ))}
@@ -596,7 +592,7 @@ export default function ProjectPage() {
             )}
             <div className="flex gap-3 mt-5">
               <button onClick={() => setShowAddStudentModal(false)} className="flex-1 border rounded-lg py-2 text-sm hover:bg-gray-50 transition" style={{ borderColor: 'var(--border-card)', color: 'var(--text-secondary)' }}>
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={handleAddStudent}
@@ -604,7 +600,7 @@ export default function ProjectPage() {
                 className="flex-1 text-white rounded-lg py-2 text-sm font-medium disabled:opacity-50"
                 style={{ backgroundColor: '#0D631B' }}
               >
-                Add
+                {t('add')}
               </button>
             </div>
           </div>
