@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Trash2 } from 'lucide-react'
 import api from '../services/api'
 import Sidebar from '../components/Sidebar'
+import { useLanguage } from '../i18n/LanguageContext'
 
 const roleBg = { admin: '#FAECE7', mentor: '#D9E6DA', student: '#F1F0EB' }
 const roleText = { admin: '#993C1D', mentor: '#0D631B', student: '#5F5E5A' }
@@ -9,6 +10,7 @@ const roleText = { admin: '#993C1D', mentor: '#0D631B', student: '#5F5E5A' }
 const emptyForm = { name: '', email: '', password: '', role: 'student' }
 
 export default function AdminUsersPage() {
+  const { t } = useLanguage()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -73,15 +75,17 @@ export default function AdminUsersPage() {
 
   const filteredUsers = roleFilter === 'all' ? users : users.filter((u) => u.role === roleFilter)
 
+  const roleLabel = (r) => ({ all: t('all'), admin: t('adminRole'), mentor: t('mentor'), student: t('student') }[r])
+
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: 'var(--bg-page)' }}>
       <Sidebar active="Admin" />
 
       <main className="ml-60 flex-1 min-h-screen p-8" style={{ backgroundColor: 'var(--bg-page)' }}>
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Users</h1>
+          <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>{t('users')}</h1>
           <button onClick={() => setShowCreateModal(true)} className="text-white px-4 py-2 rounded-lg text-sm font-medium transition" style={{ backgroundColor: '#0D631B' }}>
-            + New User
+            + {t('newUser')}
           </button>
         </div>
 
@@ -90,19 +94,19 @@ export default function AdminUsersPage() {
             <button
               key={r}
               onClick={() => setRoleFilter(r)}
-              className="px-3 py-1.5 rounded-lg text-sm font-medium capitalize transition"
+              className="px-3 py-1.5 rounded-lg text-sm font-medium transition"
               style={
                 roleFilter === r
                   ? { backgroundColor: '#D9E6DA', color: '#0D631B' }
                   : { backgroundColor: 'var(--bg-card)', color: 'var(--text-secondary)', border: '1px solid var(--border-card)' }
               }
             >
-              {r}
+              {roleLabel(r)}
             </button>
           ))}
         </div>
 
-        {loading && <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading users...</p>}
+        {loading && <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('loadingUsers')}</p>}
         {error && <p className="text-sm text-red-500">{error}</p>}
 
         {!loading && !error && (
@@ -110,10 +114,10 @@ export default function AdminUsersPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left" style={{ borderColor: 'var(--border-card)', color: 'var(--text-secondary)' }}>
-                  <th className="px-5 py-3 font-medium">Name</th>
-                  <th className="px-5 py-3 font-medium">Email</th>
-                  <th className="px-5 py-3 font-medium">Role</th>
-                  <th className="px-5 py-3 font-medium">Created</th>
+                  <th className="px-5 py-3 font-medium">{t('name')}</th>
+                  <th className="px-5 py-3 font-medium">{t('email')}</th>
+                  <th className="px-5 py-3 font-medium">{t('role')}</th>
+                  <th className="px-5 py-3 font-medium">{t('created')}</th>
                   <th className="px-5 py-3 font-medium"></th>
                 </tr>
               </thead>
@@ -125,7 +129,7 @@ export default function AdminUsersPage() {
                     <td className="px-5 py-3">
                       {u.role === 'admin' ? (
                         <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ backgroundColor: roleBg.admin, color: roleText.admin }}>
-                          admin
+                          {t('adminRole')}
                         </span>
                       ) : (
                         <select
@@ -134,8 +138,8 @@ export default function AdminUsersPage() {
                           className="text-xs font-medium px-2 py-1 rounded-full border-0 focus:outline-none cursor-pointer"
                           style={{ backgroundColor: roleBg[u.role], color: roleText[u.role] }}
                         >
-                          <option value="mentor">mentor</option>
-                          <option value="student">student</option>
+                          <option value="mentor">{t('mentor')}</option>
+                          <option value="student">{t('student')}</option>
                         </select>
                       )}
                     </td>
@@ -151,7 +155,7 @@ export default function AdminUsersPage() {
                 ))}
                 {filteredUsers.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-5 py-8 text-center" style={{ color: 'var(--text-muted)' }}>No users found.</td>
+                    <td colSpan={5} className="px-5 py-8 text-center" style={{ color: 'var(--text-muted)' }}>{t('noUsersFound')}</td>
                   </tr>
                 )}
               </tbody>
@@ -163,11 +167,11 @@ export default function AdminUsersPage() {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
           <div className="rounded-xl p-6 w-full max-w-md shadow-lg" style={{ backgroundColor: 'var(--bg-card)' }}>
-            <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>New User</h2>
+            <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>{t('newUser')}</h2>
             {formError && <p className="text-red-500 text-sm mb-3">{formError}</p>}
             <div className="flex flex-col gap-3">
               <div>
-                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Full name</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>{t('fullName')}</label>
                 <input
                   type="text"
                   value={form.name}
@@ -178,7 +182,7 @@ export default function AdminUsersPage() {
                 />
               </div>
               <div>
-                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Email</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>{t('email')}</label>
                 <input
                   type="email"
                   value={form.email}
@@ -189,7 +193,7 @@ export default function AdminUsersPage() {
                 />
               </div>
               <div>
-                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Temporary password</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>{t('temporaryPassword')}</label>
                 <input
                   type="text"
                   value={form.password}
@@ -200,21 +204,21 @@ export default function AdminUsersPage() {
                 />
               </div>
               <div>
-                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Role</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>{t('role')}</label>
                 <select
                   value={form.role}
                   onChange={(e) => setForm({ ...form, role: e.target.value })}
                   className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
                   style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
                 >
-                  <option value="student">Student</option>
-                  <option value="mentor">Mentor</option>
+                  <option value="student">{t('student')}</option>
+                  <option value="mentor">{t('mentor')}</option>
                 </select>
               </div>
             </div>
             <div className="flex gap-3 mt-5">
               <button onClick={() => { setShowCreateModal(false); setForm(emptyForm); setFormError('') }} className="flex-1 border rounded-lg py-2 text-sm hover:bg-gray-50 transition" style={{ borderColor: 'var(--border-card)', color: 'var(--text-secondary)' }}>
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={handleCreateUser}
@@ -222,7 +226,7 @@ export default function AdminUsersPage() {
                 className="flex-1 text-white rounded-lg py-2 text-sm font-medium transition disabled:opacity-50"
                 style={{ backgroundColor: '#0D631B' }}
               >
-                {creating ? 'Creating...' : 'Create User'}
+                {creating ? t('creating') : t('createUser')}
               </button>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import { FileText, Image, Download } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
+import { useLanguage } from '../i18n/LanguageContext'
 
 const files = [
   { id: 1, name: 'dashboard-wireframe.fig', project: 'Trackly', task: 'Design dashboard page', size: '2.4 MB', type: 'design' },
@@ -16,21 +17,23 @@ const typeIcon = {
 }
 
 export default function FilesPage() {
+  const { t } = useLanguage()
+
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: 'var(--bg-page)' }}>
       <Sidebar active="Files" />
 
       <main className="ml-60 flex-1 min-h-screen p-8" style={{ backgroundColor: 'var(--bg-page)' }}>
-        <h1 className="text-2xl font-semibold mb-8" style={{ color: 'var(--text-primary)' }}>Files</h1>
+        <h1 className="text-2xl font-semibold mb-8" style={{ color: 'var(--text-primary)' }}>{t('filesTitle')}</h1>
 
         <div className="border rounded-lg overflow-hidden" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-left" style={{ borderColor: 'var(--border-card)', color: 'var(--text-secondary)' }}>
-                <th className="px-5 py-3 font-medium">File</th>
-                <th className="px-5 py-3 font-medium">Project</th>
-                <th className="px-5 py-3 font-medium">Task</th>
-                <th className="px-5 py-3 font-medium">Size</th>
+                <th className="px-5 py-3 font-medium">{t('file')}</th>
+                <th className="px-5 py-3 font-medium">{t('project')}</th>
+                <th className="px-5 py-3 font-medium">{t('task')}</th>
+                <th className="px-5 py-3 font-medium">{t('size')}</th>
                 <th className="px-5 py-3 font-medium"></th>
               </tr>
             </thead>

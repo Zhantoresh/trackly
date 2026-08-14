@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import Sidebar from '../components/Sidebar'
+import { useLanguage } from '../i18n/LanguageContext'
 
 export default function ProjectsPage() {
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -21,12 +23,12 @@ export default function ProjectsPage() {
       <Sidebar active="Projects" />
 
       <main className="ml-60 flex-1 min-h-screen p-8" style={{ backgroundColor: 'var(--bg-page)' }}>
-        <h1 className="text-2xl font-semibold mb-8" style={{ color: 'var(--text-primary)' }}>Projects</h1>
+        <h1 className="text-2xl font-semibold mb-8" style={{ color: 'var(--text-primary)' }}>{t('projectsTitle')}</h1>
 
-        {loading && <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading...</p>}
+        {loading && <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('loading')}</p>}
         {error && <p className="text-sm text-red-500">{error}</p>}
         {!loading && !error && projects.length === 0 && (
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>No projects yet. Create one from the Dashboard.</p>
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('noProjectsCreateFromDashboard')}</p>
         )}
 
         <div className="grid grid-cols-2 gap-4">
@@ -38,7 +40,7 @@ export default function ProjectsPage() {
               style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}
             >
               <h3 className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>{project.title}</h3>
-              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{project.description || 'No description'}</p>
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{project.description || t('noDescription')}</p>
             </div>
           ))}
         </div>

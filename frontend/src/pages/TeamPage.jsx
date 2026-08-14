@@ -1,4 +1,5 @@
 import Sidebar from '../components/Sidebar'
+import { useLanguage } from '../i18n/LanguageContext'
 
 const members = [
   { id: 1, name: 'Zhantore', role: 'owner', email: 'zhantore29@gmail.com', initials: 'ZH', color: '#E1F5EE', text: '#0F6E56' },
@@ -11,15 +12,18 @@ const roleBg = { owner: '#D9E6DA', member: '#F1F0EB' }
 const roleText = { owner: '#0D631B', member: '#5F5E5A' }
 
 export default function TeamPage() {
+  const { t } = useLanguage()
+  const roleLabel = { owner: t('owner'), member: t('member') }
+
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: 'var(--bg-page)' }}>
       <Sidebar active="Team" />
 
       <main className="ml-60 flex-1 min-h-screen p-8" style={{ backgroundColor: 'var(--bg-page)' }}>
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Team</h1>
+          <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>{t('teamTitle')}</h1>
           <button className="text-white px-4 py-2 rounded-lg text-sm font-medium transition" style={{ backgroundColor: '#0D631B' }}>
-            + Invite member
+            + {t('inviteMember')}
           </button>
         </div>
 
@@ -27,9 +31,9 @@ export default function TeamPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-left" style={{ borderColor: 'var(--border-card)', color: 'var(--text-secondary)' }}>
-                <th className="px-5 py-3 font-medium">Member</th>
-                <th className="px-5 py-3 font-medium">Email</th>
-                <th className="px-5 py-3 font-medium">Role</th>
+                <th className="px-5 py-3 font-medium">{t('member')}</th>
+                <th className="px-5 py-3 font-medium">{t('email')}</th>
+                <th className="px-5 py-3 font-medium">{t('role')}</th>
               </tr>
             </thead>
             <tbody>
@@ -52,7 +56,7 @@ export default function TeamPage() {
                       className="text-xs px-3 py-1 font-medium rounded"
                       style={{ backgroundColor: roleBg[m.role], color: roleText[m.role] }}
                     >
-                      {m.role}
+                      {roleLabel[m.role]}
                     </span>
                   </td>
                 </tr>
