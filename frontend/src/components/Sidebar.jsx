@@ -2,14 +2,15 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { LayoutDashboard, FolderOpen, CheckSquare, File, Users, Settings, HelpCircle, LogOut, ShieldCheck, ChevronLeft, ChevronRight } from 'lucide-react'
 import api from '../services/api'
+import { useLanguage } from '../i18n/LanguageContext'
 
-const navItems = [
-  { name: 'Dashboard', icon: <LayoutDashboard size={16} /> },
-  { name: 'Projects', icon: <FolderOpen size={16} /> },
-  { name: 'Tasks', icon: <CheckSquare size={16} /> },
-  { name: 'Files', icon: <File size={16} /> },
-  { name: 'Team', icon: <Users size={16} /> },
-  { name: 'Settings', icon: <Settings size={16} /> },
+const navKeys = [
+  { name: 'Dashboard', key: 'dashboard', icon: <LayoutDashboard size={16} /> },
+  { name: 'Projects', key: 'projects', icon: <FolderOpen size={16} /> },
+  { name: 'Tasks', key: 'tasks', icon: <CheckSquare size={16} /> },
+  { name: 'Files', key: 'files', icon: <File size={16} /> },
+  { name: 'Team', key: 'team', icon: <Users size={16} /> },
+  { name: 'Settings', key: 'settings', icon: <Settings size={16} /> },
 ]
 
 const routeFor = (name) => ({
@@ -19,6 +20,7 @@ const routeFor = (name) => ({
 
 export default function Sidebar({ active }) {
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const [isAdmin, setIsAdmin] = useState(false)
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('trackly_sidebar_collapsed') === 'true')
 
@@ -74,28 +76,27 @@ export default function Sidebar({ active }) {
           onClick={toggleCollapsed}
           className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-black hover:bg-opacity-5 transition flex-shrink-0"
           style={{ color: 'var(--text-muted)' }}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
       </div>
       <nav className="flex flex-col gap-1 flex-1">
-        {navItems.map((item) => (
+        {navKeys.map((item) => (
           <button
             key={item.name}
             onClick={() => navigate(routeFor(item.name))}
             className={itemClass(item.name)}
             style={itemStyle(item.name)}
-            title={collapsed ? item.name : undefined}
+            title={collapsed ? t(item.key) : undefined}
           >
             {item.icon}
-            {!collapsed && item.name}
+            {!collapsed && t(item.key)}
           </button>
         ))}
         {isAdmin && (
-          <button onClick={() => navigate('/admin')} className={itemClass('Admin')} style={itemStyle('Admin')} title={collapsed ? 'Admin' : undefined}>
+          <button onClick={() => navigate('/admin')} className={itemClass('Admin')} style={itemStyle('Admin')} title={collapsed ? t('admin') : undefined}>
             <ShieldCheck size={16} />
-            {!collapsed && 'Admin'}
+            {!collapsed && t('admin')}
           </button>
         )}
       </nav>
@@ -103,17 +104,17 @@ export default function Sidebar({ active }) {
         <button
           className={`text-left px-3 py-2 text-sm hover:bg-black hover:bg-opacity-5 rounded-lg flex items-center gap-3 ${collapsed ? 'justify-center' : ''}`}
           style={{ color: 'var(--text-muted)' }}
-          title={collapsed ? 'Support' : undefined}
+          title={collapsed ? t('support') : undefined}
         >
-          <HelpCircle size={16} /> {!collapsed && 'Support'}
+          <HelpCircle size={16} /> {!collapsed && t('support')}
         </button>
         <button
           onClick={handleLogout}
           className={`text-left px-3 py-2 text-sm hover:text-red-500 transition flex items-center gap-3 rounded-lg ${collapsed ? 'justify-center' : ''}`}
           style={{ color: 'var(--text-muted)' }}
-          title={collapsed ? 'Sign Out' : undefined}
+          title={collapsed ? t('signOut') : undefined}
         >
-          <LogOut size={16} /> {!collapsed && 'Sign Out'}
+          <LogOut size={16} /> {!collapsed && t('signOut')}
         </button>
       </div>
     </aside>

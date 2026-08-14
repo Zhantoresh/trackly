@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
+import { useLanguage } from '../i18n/LanguageContext'
 
 const TABS = ['Profile', 'Appearance', 'Language', 'Danger Zone']
+const TAB_KEYS = { Profile: 'profile', Appearance: 'appearance', Language: 'language', 'Danger Zone': 'dangerZone' }
 
 export default function SettingsPage() {
   const navigate = useNavigate()
+  const { language, setLanguage, t } = useLanguage()
   const [activeTab, setActiveTab] = useState('Profile')
 
   const [name, setName] = useState('')
@@ -13,7 +16,6 @@ export default function SettingsPage() {
 
   const [theme, setTheme] = useState(() => localStorage.getItem('trackly_theme') || 'system')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('trackly_sidebar_collapsed') === 'true')
-  const [language, setLanguage] = useState(() => localStorage.getItem('trackly_language') || 'en')
   const [confirmBeforeDelete, setConfirmBeforeDelete] = useState(() => localStorage.getItem('trackly_confirm_delete') !== 'false')
 
   const applyTheme = (value) => {
@@ -36,11 +38,6 @@ export default function SettingsPage() {
     window.dispatchEvent(new CustomEvent('trackly_sidebar_toggle', { detail: value }))
   }
 
-  const applyLanguage = (value) => {
-    setLanguage(value)
-    localStorage.setItem('trackly_language', value)
-  }
-
   const applyConfirmDelete = (value) => {
     setConfirmBeforeDelete(value)
     localStorage.setItem('trackly_confirm_delete', String(value))
@@ -56,9 +53,8 @@ export default function SettingsPage() {
       <Sidebar active="Settings" />
 
       <main className="ml-60 flex-1 min-h-screen p-8" style={{ backgroundColor: 'var(--bg-page)' }}>
-        <h1 className="text-2xl font-semibold mb-6" style={{ color: 'var(--text-primary)' }}>Settings</h1>
+        <h1 className="text-2xl font-semibold mb-6" style={{ color: 'var(--text-primary)' }}>{t('settingsTitle')}</h1>
 
-        {/* Tabs */}
         <div className="flex gap-1 border-b mb-6" style={{ borderColor: 'var(--border-card)' }}>
           {TABS.map((tab) => (
             <button
@@ -71,18 +67,17 @@ export default function SettingsPage() {
                   : { borderColor: 'transparent', color: 'var(--text-secondary)' }
               }
             >
-              {tab}
+              {t(TAB_KEYS[tab])}
             </button>
           ))}
         </div>
 
-        {/* Profile */}
         {activeTab === 'Profile' && (
           <div className="border rounded-lg p-6 max-w-lg" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
-            <h2 className="text-base font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Profile</h2>
+            <h2 className="text-base font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>{t('profile')}</h2>
             <div className="flex flex-col gap-4">
               <div>
-                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Full name</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>{t('fullName')}</label>
                 <input
                   type="text"
                   value={name}
@@ -93,7 +88,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
-                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>Email</label>
+                <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>{t('email')}</label>
                 <input
                   type="email"
                   value={email}
@@ -105,31 +100,34 @@ export default function SettingsPage() {
               </div>
             </div>
             <button className="mt-5 text-white px-4 py-2 rounded-lg text-sm font-medium transition" style={{ backgroundColor: '#0D631B' }}>
-              Save changes
+              {t('saveChanges')}
             </button>
           </div>
         )}
 
-        {/* Appearance */}
         {activeTab === 'Appearance' && (
           <div className="border rounded-lg p-6 max-w-lg" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
-            <h2 className="text-base font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Appearance</h2>
+            <h2 className="text-base font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>{t('appearance')}</h2>
 
             <div className="mb-6">
-              <label className="text-sm mb-2 block" style={{ color: 'var(--text-secondary)' }}>Theme</label>
+              <label className="text-sm mb-2 block" style={{ color: 'var(--text-secondary)' }}>{t('theme')}</label>
               <div className="flex gap-2">
-                {['light', 'dark', 'system'].map((opt) => (
+                {[
+                  { code: 'light', label: t('light') },
+                  { code: 'dark', label: t('dark') },
+                  { code: 'system', label: t('system') },
+                ].map((opt) => (
                   <button
-                    key={opt}
-                    onClick={() => applyTheme(opt)}
-                    className="flex-1 border rounded-lg py-2 text-sm capitalize transition"
+                    key={opt.code}
+                    onClick={() => applyTheme(opt.code)}
+                    className="flex-1 border rounded-lg py-2 text-sm transition"
                     style={
-                      theme === opt
+                      theme === opt.code
                         ? { borderColor: '#16A34A', color: '#0D631B', backgroundColor: '#EAF3DE' }
                         : { borderColor: 'var(--border-card)', color: 'var(--text-secondary)' }
                     }
                   >
-                    {opt}
+                    {opt.label}
                   </button>
                 ))}
               </div>
@@ -137,8 +135,8 @@ export default function SettingsPage() {
 
             <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: 'var(--border-card)' }}>
               <div>
-                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Collapse sidebar</p>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Show icons only, more room for content</p>
+                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{t('collapseSidebar')}</p>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('collapseSidebarDesc')}</p>
               </div>
               <button
                 onClick={() => applySidebarCollapsed(!sidebarCollapsed)}
@@ -153,18 +151,18 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Language */}
         {activeTab === 'Language' && (
           <div className="border rounded-lg p-6 max-w-lg" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
-            <h2 className="text-base font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Language</h2>
+            <h2 className="text-base font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>{t('language')}</h2>
             <div className="flex gap-2">
               {[
                 { code: 'en', label: 'English' },
                 { code: 'ru', label: 'Русский' },
+                { code: 'kk', label: 'Қазақша' },
               ].map((opt) => (
                 <button
                   key={opt.code}
-                  onClick={() => applyLanguage(opt.code)}
+                  onClick={() => setLanguage(opt.code)}
                   className="flex-1 border rounded-lg py-2 text-sm transition"
                   style={
                     language === opt.code
@@ -179,14 +177,13 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Danger Zone */}
         {activeTab === 'Danger Zone' && (
           <div className="flex flex-col gap-6 max-w-lg">
             <div className="border rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Confirm before deleting</p>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Ask for confirmation before deleting tasks or files</p>
+                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{t('confirmBeforeDeleting')}</p>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('confirmBeforeDeletingDesc')}</p>
                 </div>
                 <button
                   onClick={() => applyConfirmDelete(!confirmBeforeDelete)}
@@ -201,13 +198,13 @@ export default function SettingsPage() {
             </div>
 
             <div className="border rounded-lg p-6" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
-              <h2 className="text-base font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Sign out</h2>
-              <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>Sign out of your account on this device.</p>
+              <h2 className="text-base font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>{t('signOut')}</h2>
+              <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>{t('signOutDesc')}</p>
               <button
                 onClick={handleLogout}
                 className="border border-red-200 text-red-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-50 transition"
               >
-                Sign out
+                {t('signOut')}
               </button>
             </div>
           </div>
