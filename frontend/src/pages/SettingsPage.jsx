@@ -15,7 +15,6 @@ export default function SettingsPage() {
   const [email, setEmail] = useState('')
 
   const [theme, setTheme] = useState(() => localStorage.getItem('trackly_theme') || 'system')
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('trackly_sidebar_collapsed') === 'true')
   const [confirmBeforeDelete, setConfirmBeforeDelete] = useState(() => localStorage.getItem('trackly_confirm_delete') !== 'false')
 
   const applyTheme = (value) => {
@@ -30,12 +29,6 @@ export default function SettingsPage() {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
       root.classList.toggle('dark', prefersDark)
     }
-  }
-
-  const applySidebarCollapsed = (value) => {
-    setSidebarCollapsed(value)
-    localStorage.setItem('trackly_sidebar_collapsed', String(value))
-    window.dispatchEvent(new CustomEvent('trackly_sidebar_toggle', { detail: value }))
   }
 
   const applyConfirmDelete = (value) => {
@@ -109,7 +102,7 @@ export default function SettingsPage() {
           <div className="border rounded-lg p-6 max-w-lg" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
             <h2 className="text-base font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>{t('appearance')}</h2>
 
-            <div className="mb-6">
+            <div>
               <label className="text-sm mb-2 block" style={{ color: 'var(--text-secondary)' }}>{t('theme')}</label>
               <div className="flex gap-2">
                 {[
@@ -131,22 +124,6 @@ export default function SettingsPage() {
                   </button>
                 ))}
               </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: 'var(--border-card)' }}>
-              <div>
-                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{t('collapseSidebar')}</p>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('collapseSidebarDesc')}</p>
-              </div>
-              <button
-                onClick={() => applySidebarCollapsed(!sidebarCollapsed)}
-                className="w-11 h-6 rounded-full transition relative"
-                style={{ backgroundColor: sidebarCollapsed ? '#0D631B' : 'var(--border-card)' }}
-              >
-                <span
-                  className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition ${sidebarCollapsed ? 'left-5' : 'left-0.5'}`}
-                />
-              </button>
             </div>
           </div>
         )}
