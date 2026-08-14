@@ -4,8 +4,8 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 import { Calendar, Search } from 'lucide-react'
 import api from '../services/api'
 import Sidebar from '../components/Sidebar'
+import { useLanguage } from '../i18n/LanguageContext'
 
-const columns = { todo: 'To Do', in_progress: 'In Progress', done: 'Done' }
 const priorityBg = { high: '#FAECE7', medium: '#FAEEDA', low: '#EAF3DE' }
 const priorityText = { high: '#993C1D', medium: '#854F0B', low: '#3B6D11' }
 const avatarPalette = [
@@ -21,6 +21,10 @@ const avatarColor = (name) => avatarPalette[(name || '').charCodeAt(0) % avatarP
 
 export default function TasksPage() {
   const navigate = useNavigate()
+  const { t } = useLanguage()
+
+  const columns = { todo: t('todo'), in_progress: t('inProgress'), done: t('done') }
+
   const [tasks, setTasks] = useState([])
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
@@ -114,9 +118,8 @@ export default function TasksPage() {
       <Sidebar active="Tasks" />
 
       <main className="ml-60 flex-1 min-h-screen p-8" style={{ backgroundColor: 'var(--bg-page)' }}>
-        <h1 className="text-2xl font-semibold mb-6" style={{ color: 'var(--text-primary)' }}>Tasks</h1>
+        <h1 className="text-2xl font-semibold mb-6" style={{ color: 'var(--text-primary)' }}>{t('tasksTitle')}</h1>
 
-        {/* Filters */}
         <div className="border rounded-lg p-4 mb-6 flex flex-wrap items-center gap-3" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
           <div className="relative flex-1 min-w-[200px]">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
@@ -124,7 +127,7 @@ export default function TasksPage() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search tasks..."
+              placeholder={t('searchTasksPlaceholder')}
               className="w-full border rounded-lg pl-8 pr-3 py-2 text-sm focus:outline-none focus:border-green-500"
               style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
             />
@@ -135,7 +138,7 @@ export default function TasksPage() {
             className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
             style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
           >
-            <option value="">All projects</option>
+            <option value="">{t('allProjects')}</option>
             {projects.map((p) => (
               <option key={p.id} value={p.id}>{p.title}</option>
             ))}
@@ -146,7 +149,7 @@ export default function TasksPage() {
             className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
             style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
           >
-            <option value="">All students</option>
+            <option value="">{t('allStudents')}</option>
             {assignees.map((a) => (
               <option key={a.id} value={a.id}>{a.name}</option>
             ))}
@@ -157,19 +160,19 @@ export default function TasksPage() {
             className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-500"
             style={{ borderColor: 'var(--border-card)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
           >
-            <option value="">All priorities</option>
-            <option value="high">High</option>
-            <option value="medium">Medium</option>
-            <option value="low">Low</option>
+            <option value="">{t('allPriorities')}</option>
+            <option value="high">{t('high')}</option>
+            <option value="medium">{t('medium')}</option>
+            <option value="low">{t('low')}</option>
           </select>
           {hasFilters && (
             <button onClick={clearFilters} className="text-sm hover:underline" style={{ color: '#0D631B' }}>
-              Clear filters
+              {t('clearFilters')}
             </button>
           )}
         </div>
 
-        {loading && <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading tasks...</p>}
+        {loading && <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('loadingTasks')}</p>}
         {error && <p className="text-sm text-red-500">{error}</p>}
 
         {!loading && !error && (
@@ -200,7 +203,7 @@ export default function TasksPage() {
                                     className="text-xs px-2 py-1 font-medium rounded inline-block"
                                     style={{ backgroundColor: priorityBg[task.priority], color: priorityText[task.priority] }}
                                   >
-                                    {task.priority}
+                                    {t(task.priority)}
                                   </span>
                                   {task.assignee_name && (
                                     <span
@@ -226,7 +229,7 @@ export default function TasksPage() {
                         ))}
                         {provided.placeholder}
                         {grouped[key].length === 0 && (
-                          <p className="text-xs px-1" style={{ color: 'var(--text-muted)' }}>No tasks.</p>
+                          <p className="text-xs px-1" style={{ color: 'var(--text-muted)' }}>{t('noTasks')}</p>
                         )}
                       </div>
                     )}
