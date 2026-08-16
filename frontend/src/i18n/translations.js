@@ -113,6 +113,10 @@ export const translations = {
     inviteMember: 'Invite member',
     member: 'Member',
     owner: 'owner',
+    selectProject: 'Select a project',
+    noTeamYet: 'You are not part of any team yet.',
+    removeMember: 'Remove from project',
+    confirmRemoveMember: 'Remove this member from the project?',
   },
   ru: {
     dashboard: 'Дашборд',
@@ -228,6 +232,10 @@ export const translations = {
     inviteMember: 'Пригласить участника',
     member: 'Участник',
     owner: 'владелец',
+    selectProject: 'Выберите проект',
+    noTeamYet: 'Вы пока не состоите ни в одной команде.',
+    removeMember: 'Убрать из проекта',
+    confirmRemoveMember: 'Убрать этого участника из проекта?',
   },
   kk: {
     dashboard: 'Басты бет',
@@ -343,5 +351,9 @@ export const translations = {
     inviteMember: 'Қатысушы шақыру',
     member: 'Қатысушы',
     owner: 'Иеленуші',
+    selectProject: 'Жобаны таңдаңыз',
+    noTeamYet: 'Сіз әлі ешбір командада жоқсыз.',
+    removeMember: 'Жобадан шығару',
+    confirmRemoveMember: 'Бұл қатысушыны жобадан шығару керек пе?',
   },
 }
