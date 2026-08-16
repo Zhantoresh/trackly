@@ -30,3 +30,29 @@ Team project management platform
 
 Set `VITE_API_URL` in `frontend/.env.production` (or as a Vercel project env var) to the Railway backend's public domain, then redeploy. No other frontend changes are needed — the app talks to the backend exclusively through `VITE_API_URL`.
 
+## Deploying on the university server (esg.kbtu.kz/trackly)
+
+Self-contained alternative to Railway + Vercel: everything runs as three Docker
+services (`trackly-db`, `trackly-backend`, `trackly-web`) behind the shared
+`esg-network`, following the KBTU deploy guide (no `ports:`, project-prefixed
+service names, internal Nginx unaware of the `/trackly` path prefix — the
+public Nginx that DevOps runs strips it before forwarding here).
+
+1. Copy `.env.example` to `.env` in the repo root and fill in `DB_PASSWORD`,
+   `SECRET_KEY` (e.g. `openssl rand -hex 32`), `ADMIN_EMAIL`, `ADMIN_PASSWORD`.
+2. Make sure the shared network exists once on the server: `docker network create esg-network` (skip if DevOps already created it).
+3. `docker compose up -d --build`.
+   - `trackly-backend` runs its own `alembic upgrade head` + creates the first
+     admin on boot, same as the Railway setup. Uploaded files persist in the
+     `trackly-uploads` named volume.
+   - `trackly-web` builds the frontend with `VITE_BASE_PATH=/trackly/` and
+     `VITE_API_URL=/trackly` baked in (see `frontend/Dockerfile`), so all
+     asset and API URLs resolve correctly once requests reach this container
+     with the `/trackly` prefix already stripped.
+4. Ask DevOps to route `esg.kbtu.kz/trackly/` → `trackly-web:80/` (prefix
+   stripped, per the KBTU deploy guide's Nginx convention).
+
+If the project ever needs to move to a different path than `/trackly`, update
+`VITE_BASE_PATH`/`VITE_API_URL` in `docker-compose.yml` and `PUBLIC_BASE_URL`
+to match — those three are the only path-specific values.
+
