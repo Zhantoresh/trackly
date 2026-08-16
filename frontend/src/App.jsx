@@ -11,10 +11,15 @@ import AdminUsersPage from './pages/AdminUsersPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import ProjectPage from './pages/ProjectPage'
 
+// Vite's BASE_URL mirrors the `base` config (always starts and ends with '/',
+// e.g. '/' locally and on Vercel, '/trackly/' on the university server build).
+// React Router's basename wants no trailing slash, except for the root case.
+const basename = import.meta.env.BASE_URL === '/' ? '/' : import.meta.env.BASE_URL.replace(/\/$/, '')
+
 export default function App() {
   return (
     <LanguageProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={basename}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />

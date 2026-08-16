@@ -1,0 +1,66 @@
+# Deploy on the university server (esg.kbtu.kz/trackly). See README.md
+# "Deploying on the university server" for the full walkthrough.
+#
+# All services are prefixed with trackly- (shared Docker network with other
+# projects), and nothing is published with `ports:` — only `expose:`, so
+# nothing is reachable except through the public Nginx / the esg-network.
+
+services:
+  trackly-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: trackly
+      POSTGRES_USER: trackly
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+    volumes:
+      - trackly-db-data:/var/lib/postgresql/data
+    networks:
+      - esg-network
+
+  trackly-backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://trackly:${DB_PASSWORD:?set DB_PASSWORD in .env}@trackly-db:5432/trackly
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env, e.g. openssl rand -hex 32}
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      UPLOAD_DIR: /app/uploads
+      # Must match the path DevOps' public Nginx routes this project under
+      # (from .env — never hardcode domains/paths here per the deploy guide).
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?set PUBLIC_BASE_URL in .env, e.g. https://esg.kbtu.kz/trackly}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?set ADMIN_EMAIL in .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
+      ADMIN_NAME: ${ADMIN_NAME:-Admin}
+    volumes:
+      - trackly-uploads:/app/uploads
+    depends_on:
+      - trackly-db
+    expose:
+      - "8000"
+    networks:
+      - esg-network
+
+  trackly-web:
+    build:
+      context: ./frontend
+      args:
+        VITE_BASE_PATH: ${VITE_BASE_PATH:-/trackly/}
+        VITE_API_URL: ${VITE_API_URL:-/trackly}
+    restart: unless-stopped
+    depends_on:
+      - trackly-backend
+    expose:
+      - "80"
+    networks:
+      - esg-network
+
+networks:
+  esg-network:
+    external: true
+
+volumes:
+  trackly-db-data:
+  trackly-uploads:
