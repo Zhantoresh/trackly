@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import { useLanguage } from '../i18n/LanguageContext'
-
+import logo from '../assets/logo.png'
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -26,7 +26,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-page)' }}>
       <div className="p-8 rounded-xl border w-full max-w-sm" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}>
         <div className="flex items-center gap-2 mb-6">
-          <img src="/src/assets/logo.png" alt="Trackly" className="w-7 h-7" />
+          <img src={logo} alt="Trackly" className="w-7 h-7" />
           <span className="font-semibold text-green-700 text-base">Trackly</span>
         </div>
         <h1 className="text-2xl font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>{t('welcomeBack')}</h1>
