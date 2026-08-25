@@ -1,4 +1,4 @@
-git add -Aexport const translations = {
+export const translations = {
   en: {
     dashboard: 'Dashboard',
     projects: 'Projects',
