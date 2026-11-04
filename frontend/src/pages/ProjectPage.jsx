@@ -5,6 +5,7 @@ import { File, Calendar, Trash2, Search } from 'lucide-react'
 import api from '../services/api'
 import Sidebar from '../components/Sidebar'
 import { useLanguage } from '../i18n/LanguageContext'
+import { sortByCreated, moveTask, cardStyle, columnStyle } from '../utils/kanban'
 
 const priorityBg = { high: '#FAECE7', medium: '#FAEEDA', low: '#EAF3DE' }
 const priorityText = { high: '#993C1D', medium: '#854F0B', low: '#3B6D11' }
@@ -79,7 +80,7 @@ export default function ProjectPage() {
       ])
       setProject(projectRes.data)
       setMyRole(roleRes.data.role)
-      setTasks(tasksRes.data)
+      setTasks(sortByCreated(tasksRes.data))
       setMembers(membersRes.data)
       await loadFiles()
     } catch (err) {
@@ -116,21 +117,23 @@ export default function ProjectPage() {
   const clearFilters = () => { setFilterAssignee(''); setFilterPriority(''); setSearch('') }
 
   const onDragEnd = async (result) => {
-    const { source, destination, draggableId } = result
-    if (!destination) return
-    if (source.droppableId === destination.droppableId) return
+  const { source, destination, draggableId } = result
+  if (!destination) return
+  if (source.droppableId === destination.droppableId) return
 
-    const newStatus = destination.droppableId
-    const prevTasks = tasks
-    setTasks(tasks.map((t) => (t.id === draggableId ? { ...t, status: newStatus } : t)))
+  const task = tasks.find((t) => t.id === draggableId)
+  if (!task) return
+  const oldStatus = task.status
+  const newStatus = destination.droppableId
+  setTasks((prev) => moveTask(prev, grouped, result))
 
-    try {
-      await api.put(`/api/projects/${projectId}/tasks/${draggableId}`, { status: newStatus })
-    } catch (err) {
-      setTasks(prevTasks)
-      alert(err.response?.data?.detail || 'Could not update task status.')
-    }
+  try {
+    await api.put(`/api/projects/${projectId}/tasks/${draggableId}`, { status: newStatus })
+  } catch (err) {
+    setTasks((prev) => prev.map((t) => (t.id === draggableId ? { ...t, status: oldStatus } : t)))
+    alert(err.response?.data?.detail || 'Could not update task status.')
   }
+}
 
   const handleCreateTask = async () => {
     if (!newTitle.trim()) return
@@ -306,18 +309,23 @@ export default function ProjectPage() {
                   <span className="text-xs border rounded-full px-2 py-0.5" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)', color: 'var(--text-secondary)' }}>{grouped[key].length}</span>
                 </div>
                 <Droppable droppableId={key}>
-                  {(provided) => (
-                    <div ref={provided.innerRef} {...provided.droppableProps} className="min-h-[40px]">
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className="min-h-[160px] rounded-lg p-1 -m-1 transition-colors"
+                      style={columnStyle(snapshot)}
+                    > 
                       {grouped[key].map((task, index) => (
                         <Draggable key={task.id} draggableId={task.id} index={index}>
-                          {(provided) => (
+                          {(provided, snapshot) => (
                             <div
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                               onClick={() => myRole === 'owner' && openEditModal(task)}
-                              className={`border rounded-lg p-3 mb-2.5 ${myRole === 'owner' ? 'cursor-pointer hover:border-green-300' : ''}`}
-                              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-card)' }}
+                              className={`border rounded-lg p-3 mb-2.5 select-none ${snapshot.isDragging ? 'cursor-grabbing' : myRole === 'owner' ? 'cursor-pointer hover:border-green-300' : 'cursor-grab'}`}
+                              style={cardStyle(provided, snapshot)}
                             >
                               <div className="flex items-center justify-between mb-2">
                                 <span
@@ -351,7 +359,7 @@ export default function ProjectPage() {
                         </Draggable>
                       ))}
                       {provided.placeholder}
-                      {grouped[key].length === 0 && (
+                      {grouped[key].length === 0 && !snapshot.isDraggingOver && (
                         <p className="text-xs px-1" style={{ color: 'var(--text-muted)' }}>{t('noTasks')}</p>
                       )}
                     </div>
